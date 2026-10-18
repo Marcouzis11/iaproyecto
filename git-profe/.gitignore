@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+*.cache
+
+# Reportes generados (EDA automático)
+06_feature_engineering_avanzado/reportes/
+
+# JSON generados por las notebooks del simulador de Hanoi (los de simulator/ son de ejemplo y sí se versionan)
+07_agentes_y_busqueda/initial_state.json
+07_agentes_y_busqueda/sequence.json
+
+# Modelo generado por la notebook de scikit-learn
+09_aprendizaje_automatico/modelo.pkl
+
+# Modelos generados por las notebooks de regresión
+10_regresion/*.pkl
+
+# Archivo generado por la notebook de introducción a OpenCV
+extra/computer_vision/modificada.png
