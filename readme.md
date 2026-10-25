@@ -2,11 +2,11 @@
 
 Proyecto académico de Inteligencia Artificial. Se propone comenzar con la clasificación binaria de un hallazgo y evaluar una ampliación multietiqueta según los datos y resultados.
 
-**Estado:** planificación y estructura inicial. No hay datos descargados, código de entrenamiento, modelo evaluado ni demo funcional.
+**Estado:** flujo de preparación implementado y comprobado con datos sintéticos. Hay auditoría, split por paciente y exportación de arrays para entrenamiento, validación y test. Todavía no se descargó ni procesó un dataset real, ni se entrenó un modelo.
 
 ## Demo
 
-Pendiente de implementar y publicar. `docs/` queda preparado para la presentación estática de GitHub Pages.
+La prueba del pipeline se ejecuta con `configs/demo.json`; genera y prepara imágenes artificiales, no radiografías. La demo del modelo y la presentación en GitHub Pages siguen pendientes.
 
 ## Sobre el proyecto
 
@@ -18,7 +18,7 @@ Inteligencia Artificial, Ingeniería en Informática, Facultad de Ingeniería, C
 
 ### Construido con
 
-Todavía no hay implementación ni dependencias declaradas. El plan propone Python, NumPy, pandas, OpenCV, visualización y scikit-learn; las versiones se fijarán al implementar el entorno.
+El preparador usa Python 3.11–3.13, NumPy 2.3.5 y Pillow 12.3.0. Las dependencias están fijadas en `pyproject.toml`. Las librerías de modelado se incorporarán cuando se implemente el entrenamiento.
 
 ## El dataset
 
@@ -26,7 +26,7 @@ Fuentes candidatas conservadas en `datasets/`: [NIH ChestX-ray](https://nihcc.ap
 
 ## Metodología
 
-El plan contempla auditoría y particiones por paciente, EDA, preparación de imágenes, baseline, comparación de clasificadores y evaluación final. Es una propuesta de trabajo; aún no se ejecutaron experimentos.
+Está implementada la lectura de CSV genérico, CheXpert y NIH; la auditoría de archivos y etiquetas; la detección de duplicados exactos; la separación por paciente; y el redimensionado y escalado reproducibles. El EDA sobre datos reales, baseline, comparación de clasificadores y evaluación final siguen pendientes. Ver [guía de preparación](docs/PREPARAR_DATOS.md).
 
 ## Resultados
 
@@ -37,6 +37,10 @@ Pendientes de entrenar y evaluar. No hay métricas medidas.
 ```text
 .
 ├── readme.md
+├── pyproject.toml
+├── configs/
+├── scripts/
+├── examples/
 ├── consigna.pdf
 ├── PLAN_PROYECTO_RX_TORAX.md
 ├── data/
@@ -44,6 +48,7 @@ Pendientes de entrenar y evaluar. No hay métricas medidas.
 │   └── processed/
 ├── notebooks/
 ├── src/
+│   ├── rx_torax/          # Paquete ejecutable; data/ y preprocessing/
 │   ├── data/
 │   ├── preprocessing/
 │   ├── training/
@@ -64,16 +69,35 @@ Ver [organización y ramas](docs/ORGANIZACION.md) para la responsabilidad de cad
 
 ## Instalación
 
-Aún no hay entorno instalable. Falta crear el manifiesto de dependencias con versiones exactas y documentar el entorno virtual, conforme a la consigna. No hay comandos de instalación validados para el proyecto.
+Con Python 3.12 instalado, desde la raíz del repositorio:
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e .
+```
+
+En este PC ya existe el entorno instalado. No es necesario activarlo para usar los comandos siguientes.
 
 ## Uso
 
-Por ahora, consultar el plan y la documentación de organización. Los comandos de carga, entrenamiento, evaluación y predicción se documentarán cuando estén implementados.
+Descargar imágenes y metadatos, editar el JSON correspondiente en `configs/` y ejecutar, por ejemplo:
+
+```powershell
+.\.venv\Scripts\python.exe -m rx_torax.prepare --config configs/chexpert.json
+```
+
+La [guía de preparación](docs/PREPARAR_DATOS.md) explica las rutas esperadas, los tres formatos, las particiones oficiales, la demo sintética y cómo cargar `X_train`, `X_val`, `X_test` y sus etiquetas. Los comandos de entrenamiento y predicción del modelo se incorporarán después.
+
+Para comprobar el código:
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+```
 
 ## Roadmap
 
 - Definir la propuesta formal, el dataset y el hallazgo inicial.
-- Implementar datos, EDA y preprocesamiento reproducible.
+- Ejecutar el preparador sobre una muestra real y completar el EDA y la revisión visual.
 - Entrenar, evaluar y guardar el modelo con su predictor.
 - Completar el informe y publicar la presentación.
 

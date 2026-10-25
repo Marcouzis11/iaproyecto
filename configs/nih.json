@@ -1,0 +1,12 @@
+{
+  "dataset": "nih",
+  "target": "Effusion",
+  "metadata": "data/raw/nih/Data_Entry_2017.csv",
+  "image_root": "data/raw/nih",
+  "output": "data/processed/nih_effusion_v1",
+  "image_size": 224,
+  "normalization": "unit",
+  "frontal_only": true,
+  "seed": 42,
+  "ratios": [0.7, 0.15, 0.15]
+}

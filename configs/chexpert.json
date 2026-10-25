@@ -1,0 +1,12 @@
+{
+  "dataset": "chexpert",
+  "target": "Pleural Effusion",
+  "metadata": "data/raw/CheXpert-v1.0-small/train.csv",
+  "image_root": "data/raw",
+  "output": "data/processed/chexpert_pleural_effusion_v1",
+  "image_size": 224,
+  "normalization": "unit",
+  "frontal_only": true,
+  "seed": 42,
+  "ratios": [0.7, 0.15, 0.15]
+}

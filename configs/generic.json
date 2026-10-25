@@ -1,0 +1,12 @@
+{
+  "dataset": "generic",
+  "target": "target",
+  "metadata": "data/raw/mis_radiografias/metadata.csv",
+  "image_root": "data/raw/mis_radiografias",
+  "output": "data/processed/mis_radiografias_v1",
+  "image_size": 224,
+  "normalization": "unit",
+  "frontal_only": false,
+  "seed": 42,
+  "ratios": [0.7, 0.15, 0.15]
+}
