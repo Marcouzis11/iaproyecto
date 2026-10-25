@@ -1,0 +1,12 @@
+{
+  "dataset": "generic",
+  "target": "target",
+  "metadata": "data/raw/demo_sintetica/metadata.csv",
+  "image_root": "data/raw/demo_sintetica",
+  "output": "data/processed/demo_sintetica_v1",
+  "image_size": 32,
+  "normalization": "unit",
+  "frontal_only": true,
+  "seed": 42,
+  "ratios": [0.7, 0.15, 0.15]
+}

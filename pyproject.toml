@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rx-torax"
+version = "0.1.0"
+description = "Preparación reproducible de radiografías para clasificación binaria"
+readme = "readme.md"
+requires-python = ">=3.11,<3.14"
+dependencies = ["numpy==2.3.5", "Pillow==12.3.0"]
+
+[project.scripts]
+rx-preparar = "rx_torax.prepare:main"
+rx-demo-datos = "rx_torax.demo:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["rx_torax*"]

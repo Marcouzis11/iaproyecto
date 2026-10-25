@@ -19,6 +19,9 @@
 | `src/training/` | Baseline, ajuste de modelos y configuración de experimentos. |
 | `src/evaluation/` | Métricas, comparación de modelos y análisis de errores. |
 | `src/inference/` | Carga del artefacto y predicción sobre imágenes nuevas. |
+| `src/rx_torax/` | Paquete Python instalable. Implementación inicial en `data/`, `preprocessing/`, `prepare.py` y `demo.py`. Las carpetas superiores de `src/` se conservan como referencia del esqueleto inicial. |
+| `configs/` | Configuraciones de entrada, salida y transformación. |
+| `scripts/`, `examples/` | Lanzador PowerShell y ejemplo de carga de arrays. |
 | `models/` | Modelos entrenados y artefactos asociados. |
 | `tests/` | Comprobaciones del pipeline cuando haya implementación. |
 | `docs/` | Informe, decisiones y futura presentación estática. |
@@ -55,4 +58,4 @@ Estas ramas se crean localmente. Su publicación y la configuración de GitHub P
 
 ## Pendientes de implementación y entrega
 
-La estructura es un punto de partida, no una entrega funcional. Quedan el Project Charter, la elección definitiva del dataset y del hallazgo, el entorno virtual y `pyproject.toml` con versiones exactas, la semilla global, los notebooks/scripts, el modelo, las métricas y la demo. El README debe completarse siguiendo la plantilla con datos reales del equipo y resultados medidos. El plan conceptual está en `PLAN_PROYECTO_RX_TORAX.md`; esta organización incorpora los requisitos de entrega que ese plan dejó expresamente fuera de su fundamento.
+Está implementado el preparador de datos, con entorno instalable, dependencias fijadas, semilla y pruebas de independencia y reproducibilidad. Ver `PREPARAR_DATOS.md`. Quedan el Project Charter, la elección definitiva del dataset y del hallazgo, la ejecución y el EDA sobre datos reales, el modelo, las métricas y la demo del modelo. El README debe completarse con los datos reales del equipo y los resultados medidos. El plan conceptual está en `PLAN_PROYECTO_RX_TORAX.md`; esta organización incorpora los requisitos de entrega que ese plan dejó expresamente fuera de su fundamento.
