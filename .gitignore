@@ -12,3 +12,18 @@ venv/
 # Entornos / secretos
 .env
 .env.*
+
+# Datos y artefactos locales: solo se versionan marcadores de directorio.
+/data/**
+!/data/**/
+!/data/**/.gitkeep
+/models/**
+!/models/**/
+!/models/**/.gitkeep
+
+# Empaquetado de Python y temporales
+build/
+dist/
+*.egg-info/
+*.log
+Thumbs.db
