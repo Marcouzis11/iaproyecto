@@ -21,7 +21,7 @@ def read_metadata(config):
             required = {"Path", target}
         elif dataset == "nih":
             required = {"Image Index", "Patient ID", "Finding Labels"}
-        if config.get("frontal_only"):
+        if config.get("frontal_only") or config.get("views"):
             required.add({"chexpert": "Frontal/Lateral", "nih": "View Position",
                           "generic": "view"}[dataset])
         if not required <= fields:
@@ -81,6 +81,7 @@ def read_metadata(config):
             item['target'] = int(target in labels)
             view = row.get('View Position', '').strip().upper()
             frontal = view in {'AP', 'PA'}
+            allowed_view = not config.get('views') or view in config['views']
         else:
             relative = row['Path' if dataset == 'chexpert' else 'image_path'].strip().replace('\\', '/')
             item['image_path'] = relative
@@ -94,9 +95,11 @@ def read_metadata(config):
                 match = re.search(r'(?:^|/)(patient\d+)(?:/|$)', relative)
                 item['patient_id'] = match.group(1) if match else ''
                 frontal = row.get('Frontal/Lateral', '').strip().lower() == 'frontal'
+                allowed_view = True
             else:
                 item['patient_id'] = row['patient_id'].strip()
                 frontal = row.get('view', '').strip().upper() in {'AP', 'PA', 'FRONTAL'}
+                allowed_view = not config.get('views') or row.get('view', '').strip().upper() in config['views']
             label = row[target].strip()
             item['target_original'] = label
             if label in {'0', '0.0', '1', '1.0'}:
@@ -108,6 +111,8 @@ def read_metadata(config):
             reason = reason or 'missing_patient_id'
         if config.get('frontal_only') and not frontal:
             reason = reason or 'non_frontal_view'
+        if not allowed_view:
+            reason = reason or 'excluded_view'
         if reason:
             exclusions.append(dict(item, reason=reason))
         else:

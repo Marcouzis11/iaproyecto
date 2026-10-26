@@ -11,7 +11,7 @@ from PIL import Image
 
 from rx_torax.data.metadata import audit, read_metadata
 from rx_torax.demo import generate
-from rx_torax.prepare import prepare
+from rx_torax.prepare import load_config, prepare
 from rx_torax.preprocessing.images import read_image, transform
 
 
@@ -179,6 +179,30 @@ class PreparationTests(unittest.TestCase):
         records, excluded, _ = read_metadata(self.config)
         self.assertFalse(records)
         self.assertEqual(excluded[0]['reason'], 'ambiguous_filename')
+
+    def test_opaque_rgba_is_read_and_transparent_rgba_is_rejected(self):
+        rgba = np.full((8, 8, 4), 255, dtype=np.uint8)
+        rgba[..., :3] = 100
+        Image.fromarray(rgba, 'RGBA').save(self.root/'opaca.png')
+        pixels, info = read_image(self.root/'opaca.png')
+        self.assertEqual(info['mode'], 'RGBA')
+        self.assertTrue(np.allclose(pixels, 100/255))
+        rgba[0, 0, 3] = 0
+        Image.fromarray(rgba, 'RGBA').save(self.root/'transparente.png')
+        with self.assertRaisesRegex(ValueError, 'transparencia'):
+            read_image(self.root/'transparente.png')
+
+    def test_nih_views_keeps_only_requested_view(self):
+        rows = self.rows()[:2]
+        self.write_rows([{'Image Index': Path(r['image_path']).name, 'Patient ID': r['patient_id'],
+                          'Finding Labels': 'Pneumothorax', 'View Position': view}
+                         for r, view in zip(rows, ['PA', 'AP'])])
+        self.config.update(dataset='nih', target='Pneumothorax', frontal_only=True, views=['pa'])
+        path = self.root/'config.json'
+        path.write_text(json.dumps(self.config), encoding='utf-8')
+        records, excluded, _ = read_metadata(load_config(path))
+        self.assertEqual([Path(r['image_path']).name for r in records], [Path(rows[0]['image_path']).name])
+        self.assertEqual(excluded[0]['reason'], 'excluded_view')
 
     def test_nih_official_test_is_preserved(self):
         rows = self.rows()

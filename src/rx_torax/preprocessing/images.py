@@ -26,6 +26,12 @@ def read_image(path: Path):
             if mode == "RGB":
                 pixels = np.asarray(image.convert("L"))
                 scale = 255.0
+            elif mode == "RGBA":
+                # Algunas PNG de NIH vienen en RGBA con alfa constante; solo se aceptan si son opacas.
+                if np.asarray(image.getchannel("A")).min() < 255:
+                    raise ValueError("Imagen RGBA con transparencia no admitida")
+                pixels = np.asarray(image.convert("RGB").convert("L"))
+                scale = 255.0
             elif mode == "L":
                 pixels = np.asarray(image)
                 scale = 255.0
