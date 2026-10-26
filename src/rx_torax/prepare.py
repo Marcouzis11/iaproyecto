@@ -21,7 +21,7 @@ from rx_torax.preprocessing.images import transform
 
 
 DEFAULTS = {'image_size': 224, 'seed': 42, 'ratios': [0.7, 0.15, 0.15],
-            'normalization': 'unit', 'frontal_only': False, 'split_attempts': 1000}
+            'normalization': 'unit', 'frontal_only': False, 'views': None, 'split_attempts': 1000}
 
 
 def load_config(path):
@@ -47,6 +47,13 @@ def load_config(path):
         raise ValueError('ratios debe contener tres proporciones positivas que sumen 1')
     if type(config['frontal_only']) is not bool:
         raise ValueError('frontal_only debe ser true o false')
+    views = config['views']
+    if views is not None:
+        if config['dataset'] == 'chexpert':
+            raise ValueError('views solo se admite para nih y generic')
+        if not isinstance(views, list) or not views or not all(isinstance(v, str) and v.strip() for v in views):
+            raise ValueError('views debe ser una lista no vacía de vistas, por ejemplo ["PA"]')
+        config['views'] = sorted({v.strip().upper() for v in views})
     if config['normalization'] not in {'unit', 'zscore'}:
         raise ValueError('normalization debe ser unit o zscore')
     for key in ['metadata', 'image_root', 'output']:
