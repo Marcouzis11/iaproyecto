@@ -2,6 +2,18 @@
 
 El flujo está implementado. Se verificó con imágenes sintéticas y CSV de prueba de los tres formatos; todavía no se ejecutó contra una descarga real de NIH o CheXpert. No incluye entrenamiento ni descarga automática. Descargar los datos de las fuentes de `datasets/` y descomprimirlos antes de preparar.
 
+## Alternativa visual: todo el flujo en notebooks
+
+`notebooks/01_preparacion_radiografias.ipynb` contiene la implementación completa en sus celdas, además de configuración, tablas, gráficos y exportación. No importa los módulos locales `.py`. `notebooks/02_pruebas_pipeline.ipynb` verifica ese código con 12 pruebas. Ambos se comprobaron ejecutando todas sus celdas con un kernel nuevo.
+
+En el entorno ya instalado de este PC:
+
+```powershell
+.\.venv\Scripts\python.exe -m notebook notebooks/01_preparacion_radiografias.ipynb
+```
+
+Elegir el kernel `Python (iaproyecto)` y ejecutar de arriba hacia abajo. La configuración está dentro del notebook: comienza en modo demo y se puede cambiar por NIH, CheXpert o genérico. Las rutas y el hallazgo también se ajustan allí; en este modo no hace falta editar los JSON de consola. Ver `notebooks/README.md` para instalar el entorno y registrar el kernel en otro equipo.
+
 ## 1. Entorno
 
 Abrir PowerShell en el repositorio:

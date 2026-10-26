@@ -80,6 +80,16 @@ En este PC ya existe el entorno instalado. No es necesario activarlo para usar l
 
 ## Uso
 
+El flujo completo también está en [notebooks ejecutables](notebooks/README.md), con toda la implementación en celdas y sin importar los módulos Python locales. Para abrirlo en el entorno ya instalado:
+
+```powershell
+.\.venv\Scripts\python.exe -m notebook notebooks/01_preparacion_radiografias.ipynb
+```
+
+El primer notebook usa demo sintética por defecto. Cambiar `DATASET`, rutas y hallazgo en su configuración para radiografías reales. El segundo notebook ejecuta las pruebas de esa implementación. Para instalar las herramientas de notebooks en otro clon, usar `pip install -e ".[notebooks]"` dentro del entorno; las instrucciones completas están en el README de notebooks.
+
+También se mantiene la alternativa de consola:
+
 Descargar imágenes y metadatos, editar el JSON correspondiente en `configs/` y ejecutar, por ejemplo:
 
 ```powershell

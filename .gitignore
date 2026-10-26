@@ -27,3 +27,6 @@ dist/
 *.egg-info/
 *.log
 Thumbs.db
+
+# Archivos intermedios de ejecución de notebooks
+/work/
