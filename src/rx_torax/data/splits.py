@@ -54,6 +54,43 @@ def partition(records, config, names, ratios):
     return splits
 
 
+def select_balanced(splits, config):
+    """Conserva todos los positivos y submuestrea negativos, igual en cada conjunto.
+
+    Se aplica después del split por paciente. Cada conjunto usa su propio generador,
+    derivado de la semilla, y la elección depende solo de etiquetas y pacientes.
+    """
+    selection = config['selection']
+    fraction = selection['positive_fraction']
+    share = selection['no_finding_share']
+    cap = selection['max_negatives_per_patient']
+    selected = {}
+    for position, name in enumerate(NAMES):
+        rows = sorted(splits[name], key=lambda r: r['image_path'])
+        positives = [r for r in rows if r['target'] == 1]
+        wanted = round(len(positives) * (1 - fraction) / fraction)
+        no_finding = round(wanted * share)
+        groups = [('No Finding', no_finding, [r for r in rows if r['target'] == 0 and r['target_original'] == 'No Finding']),
+                  ('otros hallazgos', wanted - no_finding,
+                   [r for r in rows if r['target'] == 0 and r['target_original'] != 'No Finding'])]
+        rng = np.random.default_rng([config['seed'], position])
+        negatives, per_patient = [], {}
+        for label, count, candidates in groups:
+            chosen = []
+            for index in rng.permutation(len(candidates)):
+                if len(chosen) == count:
+                    break
+                row = candidates[int(index)]
+                if per_patient.get(row['patient_id'], 0) < cap:
+                    per_patient[row['patient_id']] = per_patient.get(row['patient_id'], 0) + 1
+                    chosen.append(row)
+            if len(chosen) < count:
+                raise ValueError(f"{name}: no alcanzan los negativos de '{label}' ({len(chosen)} de {count})")
+            negatives.extend(chosen)
+        selected[name] = sorted(positives + negatives, key=lambda r: (r['patient_id'], r['image_path']))
+    return selected
+
+
 def make_splits(records, config):
     supplied = {r['split'] for r in records if r['split']}
     if supplied:
@@ -66,8 +103,12 @@ def make_splits(records, config):
             internal = partition(splits['train'], config, ('train', 'val'), [a/(a+b), b/(a+b)])
             splits.update(internal)
             method = 'explicit_test_patient_validation_from_train'
+        if config.get('selection'):
+            splits = select_balanced(splits, config)
         validate(splits)
         return splits, method
     splits = partition(records, config, NAMES, config['ratios'])
+    if config.get('selection'):
+        splits = select_balanced(splits, config)
     validate(splits)
     return splits, 'seeded_patient_search'

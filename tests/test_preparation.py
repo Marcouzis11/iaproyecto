@@ -4,6 +4,7 @@ import csv
 import json
 import tempfile
 import unittest
+from collections import Counter
 from pathlib import Path
 
 import numpy as np
@@ -11,6 +12,7 @@ from PIL import Image
 
 from rx_torax.data.metadata import audit, read_metadata
 from rx_torax.demo import generate
+from rx_torax.data.splits import select_balanced
 from rx_torax.prepare import load_config, prepare
 from rx_torax.preprocessing.images import read_image, transform
 
@@ -203,6 +205,49 @@ class PreparationTests(unittest.TestCase):
         records, excluded, _ = read_metadata(load_config(path))
         self.assertEqual([Path(r['image_path']).name for r in records], [Path(rows[0]['image_path']).name])
         self.assertEqual(excluded[0]['reason'], 'excluded_view')
+
+    def test_selection_keeps_positives_and_same_fraction_per_split(self):
+        rows = []
+        for p in range(600):
+            for study in range(2):
+                positive = (p // 3) % 8 == 0
+                labels = 'Effusion' if positive else ('No Finding' if (p // 3) % 7 < 4 else 'Mass')
+                rows.append({'image_path': f'p{p}_{study}.png', 'patient_id': f'p{p}', 'split': '',
+                             'target': int(positive), 'target_original': labels, 'pixel_hash': f'{p}_{study}'})
+        names = ('train', 'val', 'test')
+        full = {name: [r for r in rows if int(r['patient_id'][1:]) % 3 == i] for i, name in enumerate(names)}
+        config = {'seed': 42, 'selection': {'positive_fraction': 0.4, 'no_finding_share': 0.65,
+                                            'max_negatives_per_patient': 1}}
+        selected = select_balanced(full, config)
+        self.assertEqual(selected, select_balanced(full, config))
+        for name in names:
+            chosen = selected[name]
+            positives = [r for r in chosen if r['target'] == 1]
+            self.assertEqual(len(positives), sum(r['target'] == 1 for r in full[name]))
+            self.assertAlmostEqual(len(positives) / len(chosen), 0.4, places=2)
+            negatives = [r for r in chosen if r['target'] == 0]
+            self.assertEqual(len({r['patient_id'] for r in negatives}), len(negatives))
+            self.assertAlmostEqual(sum(r['target_original'] == 'No Finding' for r in negatives) / len(negatives),
+                                   0.65, places=1)
+
+    def test_selection_cap_counts_all_negatives_of_a_patient(self):
+        rows = [{'image_path': f'p{p}_{s}.png', 'patient_id': f'p{p}', 'target': 0,
+                 'target_original': 'No Finding' if s < 2 else 'Mass'} for p in range(40) for s in range(4)]
+        rows += [{'image_path': f'q{p}.png', 'patient_id': f'q{p}', 'target': 1, 'target_original': 'Effusion'}
+                 for p in range(20)]
+        config = {'seed': 42, 'selection': {'positive_fraction': 0.4, 'no_finding_share': 0.5,
+                                            'max_negatives_per_patient': 2}}
+        selected = select_balanced({'train': rows, 'val': rows, 'test': rows}, config)
+        counts = Counter(r['patient_id'] for r in selected['train'] if r['target'] == 0)
+        self.assertLessEqual(max(counts.values()), 2)
+
+    def test_selection_stops_when_negatives_are_missing(self):
+        rows = [{'image_path': f'p{i}.png', 'patient_id': f'p{i}', 'target': int(i < 8),
+                 'target_original': 'Effusion' if i < 8 else 'No Finding'} for i in range(10)]
+        config = {'seed': 42, 'selection': {'positive_fraction': 0.4, 'no_finding_share': 0.65,
+                                            'max_negatives_per_patient': 3}}
+        with self.assertRaisesRegex(ValueError, 'no alcanzan'):
+            select_balanced({'train': rows, 'val': rows, 'test': rows}, config)
 
     def test_nih_official_test_is_preserved(self):
         rows = self.rows()
