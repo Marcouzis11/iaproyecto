@@ -21,7 +21,7 @@ from rx_torax.preprocessing.images import transform
 
 
 DEFAULTS = {'image_size': 224, 'seed': 42, 'ratios': [0.7, 0.15, 0.15],
-            'normalization': 'unit', 'frontal_only': False, 'views': None, 'split_attempts': 1000}
+            'normalization': 'unit', 'frontal_only': False, 'views': None, 'selection': None, 'split_attempts': 1000}
 
 
 def load_config(path):
@@ -54,6 +54,17 @@ def load_config(path):
         if not isinstance(views, list) or not views or not all(isinstance(v, str) and v.strip() for v in views):
             raise ValueError('views debe ser una lista no vacía de vistas, por ejemplo ["PA"]')
         config['views'] = sorted({v.strip().upper() for v in views})
+    selection = config['selection']
+    if selection is not None:
+        keys = {'positive_fraction', 'no_finding_share', 'max_negatives_per_patient'}
+        if config['dataset'] != 'nih':
+            raise ValueError('selection solo se admite para nih')
+        if not isinstance(selection, dict) or selection.keys() != keys:
+            raise ValueError(f'selection debe contener exactamente {sorted(keys)}')
+        if not 0 < selection['positive_fraction'] < 1 or not 0 <= selection['no_finding_share'] <= 1:
+            raise ValueError('positive_fraction debe estar entre 0 y 1, y no_finding_share entre 0 y 1 inclusive')
+        if type(selection['max_negatives_per_patient']) is not int or selection['max_negatives_per_patient'] < 1:
+            raise ValueError('max_negatives_per_patient debe ser un entero positivo')
     if config['normalization'] not in {'unit', 'zscore'}:
         raise ValueError('normalization debe ser unit o zscore')
     for key in ['metadata', 'image_root', 'output']:
@@ -125,12 +136,12 @@ def prepare(config_path):
                   'metadata_sha256': hashlib.sha256(Path(config['metadata']).read_bytes()).hexdigest(),
                   'source_rows': source_count, 'accepted_images': len(records),
                   'excluded_rows': len(exclusions), 'exclusion_reasons': dict(Counter(r['reason'] for r in exclusions)),
-                  'split_method': method, 'seed': config['seed'], 'splits': {},
+                  'split_method': method, 'seed': config['seed'], 'selection': config['selection'], 'splits': {},
                   'checks': {'patients_disjoint': True, 'exact_pixels_disjoint': True,
                              'both_classes_each_split': True},
                   'limitations': ['Exact duplicate detection only; near duplicates require further review.',
                                  'No automatic clinical quality or label correctness verification.',
-                                 'No resampling, augmentation, outlier deletion or label imputation.']}
+                                 'No repetition, augmentation, outlier deletion or label imputation.']}
         for name in NAMES:
             rows = splits[name]
             array = np.lib.format.open_memmap(stage / f'X_{name}.npy', mode='w+', dtype=np.float32,
@@ -152,7 +163,7 @@ def prepare(config_path):
             report['splits'][name] = {'images': len(rows), 'patients': len({r['patient_id'] for r in rows}),
                                      'class_0': sum(r['target'] == 0 for r in rows),
                                      'class_1': sum(r['target'] == 1 for r in rows),
-                                     'image_fraction': len(rows) / len(records)}
+                                     'image_fraction': len(rows) / sum(len(v) for v in splits.values())}
             print(f'{name}: {len(rows)} imágenes exportadas', flush=True)
         assert len(records) + len(exclusions) == source_count
         write_csv(stage / 'exclusiones.csv', exclusions)
