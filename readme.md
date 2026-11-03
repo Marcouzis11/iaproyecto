@@ -96,7 +96,7 @@ Descargar imágenes y metadatos, editar el JSON correspondiente en `configs/` y 
 .\.venv\Scripts\python.exe -m rx_torax.prepare --config configs/chexpert.json
 ```
 
-La [guía de preparación](docs/PREPARAR_DATOS.md) explica las rutas esperadas, los tres formatos, las particiones oficiales, la demo sintética y cómo cargar `X_train`, `X_val`, `X_test` y sus etiquetas. Los comandos de entrenamiento y predicción del modelo se incorporarán después.
+La [guía de preparación](docs/PREPARAR_DATOS.md) explica las rutas esperadas, los tres formatos, las particiones oficiales, la demo sintética y cómo cargar `X_train`, `X_val`, `X_test` y sus etiquetas. Los comandos de entrenamiento, evaluación y predicción sobre imágenes nuevas están en [los resultados de los modelos](docs/RESULTADOS_MODELOS.md).
 
 Para comprobar el código:
 
