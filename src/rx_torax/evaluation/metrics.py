@@ -44,6 +44,26 @@ def best_threshold(labels, scores):
     return float(ordered[np.argmax(np.where(valid, f1, -1.0))])
 
 
+def roc_curve(labels, scores):
+    """Puntos (1 - especificidad, recall) para cada umbral distinto, de mayor a menor."""
+    labels = np.asarray(labels).astype(int)
+    scores = np.asarray(scores)
+    order = np.argsort(-scores, kind='stable')
+    ordered = scores[order]
+    tp = np.cumsum(labels[order])
+    fp = np.cumsum(1 - labels[order])
+    last = np.append(ordered[1:] != ordered[:-1], True)
+    return np.concatenate([[0.0], fp[last] / fp[-1]]), np.concatenate([[0.0], tp[last] / tp[-1]])
+
+
+def at_prevalence(recall, specificity, prevalence):
+    """Precisión y F1 esperados con otra prevalencia, si recall y especificidad no cambian."""
+    hits, alarms = recall * prevalence, (1 - specificity) * (1 - prevalence)
+    precision = hits / (hits + alarms) if hits + alarms else 0.0
+    f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
+    return {'prevalence': prevalence, 'precision': precision, 'f1': f1}
+
+
 def trivial_baselines(labels):
     """Referencias sin modelo: predecir siempre positivo o siempre negativo."""
     count = len(labels)
