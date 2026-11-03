@@ -230,6 +230,34 @@ class PreparationTests(unittest.TestCase):
             self.assertAlmostEqual(sum(r['target_original'] == 'No Finding' for r in negatives) / len(negatives),
                                    0.65, places=1)
 
+    def test_train_positive_repeat_adds_negatives_only_in_train(self):
+        rows = {}
+        for position, name in enumerate(('train', 'val', 'test')):
+            negatives = [{'image_path': f'{name}_n{p}.png', 'patient_id': f'{name}_n{p}', 'target': 0,
+                          'target_original': 'No Finding' if p % 2 else 'Mass'} for p in range(400)]
+            positives = [{'image_path': f'{name}_p{p}.png', 'patient_id': f'{name}_p{p}', 'target': 1,
+                          'target_original': 'Effusion'} for p in range(20 + position)]
+            rows[name] = negatives + positives
+        base = {'positive_fraction': 0.4, 'no_finding_share': 0.5, 'max_negatives_per_patient': 1}
+        plain = select_balanced(rows, {'seed': 42, 'selection': base})
+        repeated = select_balanced(rows, {'seed': 42, 'selection': base | {'train_positive_repeat': 3}})
+        self.assertEqual(plain['val'], repeated['val'])
+        self.assertEqual(plain['test'], repeated['test'])
+        count = lambda chosen, target: sum(r['target'] == target for r in chosen)
+        self.assertEqual(count(repeated['train'], 1), 20)
+        self.assertEqual(count(repeated['train'], 0), 90)
+        self.assertEqual(len({r['image_path'] for r in repeated['train']}), 110)
+
+    def test_selection_repeat_must_be_positive_integer(self):
+        path = self.root / 'seleccion.json'
+        selection = {'positive_fraction': 0.4, 'no_finding_share': 0.5, 'max_negatives_per_patient': 1,
+                     'train_positive_repeat': 0}
+        path.write_text(json.dumps({'dataset': 'nih', 'target': 'Effusion', 'metadata': str(self.raw / 'metadata.csv'),
+                                    'image_root': str(self.raw), 'output': str(self.root / 'salida'),
+                                    'selection': selection}), encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'train_positive_repeat'):
+            load_config(path)
+
     def test_selection_cap_counts_all_negatives_of_a_patient(self):
         rows = [{'image_path': f'p{p}_{s}.png', 'patient_id': f'p{p}', 'target': 0,
                  'target_original': 'No Finding' if s < 2 else 'Mass'} for p in range(40) for s in range(4)]

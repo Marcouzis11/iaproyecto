@@ -10,7 +10,7 @@ import numpy as np
 import torch
 
 from rx_torax.evaluation.metrics import best_threshold, binary_metrics, roc_auc, trivial_baselines
-from rx_torax.training.train import DEFAULTS, augment, load_config, train
+from rx_torax.training.train import DEFAULTS, augment, load_config, repeat_positive_indices, train
 
 
 class MetricsTests(unittest.TestCase):
@@ -87,6 +87,16 @@ class TrainingTests(unittest.TestCase):
         self.assertEqual(artifact['epoch'], report['best_epoch'])
         self.assertEqual((artifact['train_mean'], artifact['train_std'], artifact['image_size']), (0.2, 0.2, 64))
         self.assertFalse((self.root / 'a.parcial').exists())
+
+    def test_repeat_positives_only_changes_train_samples(self):
+        labels = np.array([1, 0, 0, 1, 0])
+        indices = np.array([0, 1, 3, 4])
+        self.assertEqual(repeat_positive_indices(indices, labels, 1).tolist(), [0, 1, 3, 4])
+        self.assertEqual(sorted(repeat_positive_indices(indices, labels, 3).tolist()), [0, 0, 0, 1, 3, 3, 3, 4])
+        report = train(self.config('a') | {'repeat_positives': 3})
+        self.assertEqual((report['train_images'], report['train_samples_per_epoch']), (16, 32))
+        self.assertEqual(report['train_positive_fraction'], 0.75)
+        self.assertEqual(report['val_images'], 8)
 
     def test_existing_output_is_refused(self):
         (self.root / 'a').mkdir()
