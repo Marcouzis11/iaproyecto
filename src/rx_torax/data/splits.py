@@ -59,16 +59,19 @@ def select_balanced(splits, config):
 
     Se aplica después del split por paciente. Cada conjunto usa su propio generador,
     derivado de la semilla, y la elección depende solo de etiquetas y pacientes.
+    train_positive_repeat suma negativos solo en train, para el entrenamiento que
+    repite positivos; val y test quedan iguales. Las repeticiones no se exportan.
     """
     selection = config['selection']
     fraction = selection['positive_fraction']
     share = selection['no_finding_share']
     cap = selection['max_negatives_per_patient']
+    repeat = selection.get('train_positive_repeat', 1)
     selected = {}
     for position, name in enumerate(NAMES):
         rows = sorted(splits[name], key=lambda r: r['image_path'])
         positives = [r for r in rows if r['target'] == 1]
-        wanted = round(len(positives) * (1 - fraction) / fraction)
+        wanted = round(len(positives) * (repeat if name == 'train' else 1) * (1 - fraction) / fraction)
         no_finding = round(wanted * share)
         groups = [('No Finding', no_finding, [r for r in rows if r['target'] == 0 and r['target_original'] == 'No Finding']),
                   ('otros hallazgos', wanted - no_finding,

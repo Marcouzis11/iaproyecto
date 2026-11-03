@@ -20,7 +20,8 @@ from rx_torax.training.model import build_model, to_input
 
 
 DEFAULTS = {'architecture': 'densenet121', 'pretrained': True, 'epochs': 15, 'patience': 4, 'batch_size': 32,
-            'learning_rate': 1e-4, 'weight_decay': 1e-4, 'augmentation': True, 'seed': 42, 'device': 'auto'}
+            'learning_rate': 1e-4, 'weight_decay': 1e-4, 'augmentation': True, 'repeat_positives': 1, 'seed': 42,
+            'device': 'auto'}
 
 
 def load_config(path):
@@ -31,7 +32,7 @@ def load_config(path):
         raise ValueError(f"Configuración: faltan {sorted(required-given.keys())}; "
                          f"claves desconocidas {sorted(given.keys()-required-set(DEFAULTS))}")
     config = DEFAULTS | given
-    for name in ['epochs', 'patience', 'batch_size']:
+    for name in ['epochs', 'patience', 'batch_size', 'repeat_positives']:
         if not isinstance(config[name], int) or config[name] < 1:
             raise ValueError(f'{name} debe ser un entero positivo')
     if Path(config['output']).exists():
@@ -54,6 +55,11 @@ def load_split(data, name, limit=None):
     if limit and limit < len(labels):
         indices = np.linspace(0, len(labels) - 1, limit, dtype=int)
     return images, labels, indices
+
+
+def repeat_positive_indices(indices, labels, repeat):
+    """Cada positivo aparece `repeat` veces por época. Solo se usa con train."""
+    return np.concatenate([indices, np.repeat(indices[labels[indices] == 1], repeat - 1)])
 
 
 def augment(batch, generator):
@@ -126,7 +132,8 @@ def train(config, limit=None):
     preprocessing = json.loads((data / 'preprocessing.json').read_text(encoding='utf-8'))
     target_name = json.loads((data / 'labels.json').read_text(encoding='utf-8'))['target']
     mean, std = preprocessing['train_mean'], preprocessing['train_std']
-    images, labels, indices = load_split(data, 'train', limit)
+    images, labels, unique_indices = load_split(data, 'train', limit)
+    indices = repeat_positive_indices(unique_indices, labels, config['repeat_positives'])
     val_images, val_labels, val_indices = load_split(data, 'val', limit)
     device = pick_device(config['device'])
     torch.manual_seed(config['seed'])
@@ -136,7 +143,8 @@ def train(config, limit=None):
     optimizer = torch.optim.AdamW(model.parameters(), lr=config['learning_rate'], weight_decay=config['weight_decay'])
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.3, patience=1)
     val_target = torch.from_numpy(val_labels[val_indices].astype(np.float32))
-    print(f'Entrenando {config["architecture"]} en {device}: {len(indices)} de train, {len(val_indices)} de val')
+    print(f'Entrenando {config["architecture"]} en {device}: {len(unique_indices)} imágenes de train '
+          f'({len(indices)} por época), {len(val_indices)} de val')
 
     checkpoint = stage / 'modelo.pt'
     history, best_auc, best_epoch = [], -1.0, 0
@@ -176,7 +184,8 @@ def train(config, limit=None):
               [{'array_index': int(index), 'target': int(label), 'score': float(score)}
                for index, label, score in zip(val_indices, labels_val, scores)])
     report = {'created_at': datetime.now(timezone.utc).isoformat(), 'config': config, 'limit': limit,
-              'device': str(device), 'versions': versions(), 'train_images': len(indices),
+              'device': str(device), 'versions': versions(), 'train_images': len(unique_indices),
+              'train_samples_per_epoch': len(indices), 'train_positive_fraction': float(labels[indices].mean()),
               'val_images': len(val_indices), 'best_epoch': best_epoch, 'epochs_run': len(history),
               'train_seconds': time.perf_counter() - started,
               'val': {'auc': roc_auc(labels_val, scores), **binary_metrics(labels_val, scores, threshold)},

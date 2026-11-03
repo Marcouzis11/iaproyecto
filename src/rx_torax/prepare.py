@@ -59,8 +59,10 @@ def load_config(path):
         keys = {'positive_fraction', 'no_finding_share', 'max_negatives_per_patient'}
         if config['dataset'] != 'nih':
             raise ValueError('selection solo se admite para nih')
-        if not isinstance(selection, dict) or selection.keys() != keys:
-            raise ValueError(f'selection debe contener exactamente {sorted(keys)}')
+        if not isinstance(selection, dict) or selection.keys() - {'train_positive_repeat'} != keys:
+            raise ValueError(f'selection debe contener {sorted(keys)} y, opcionalmente, train_positive_repeat')
+        if type(selection.get('train_positive_repeat', 1)) is not int or selection.get('train_positive_repeat', 1) < 1:
+            raise ValueError('train_positive_repeat debe ser un entero positivo')
         if not 0 < selection['positive_fraction'] < 1 or not 0 <= selection['no_finding_share'] <= 1:
             raise ValueError('positive_fraction debe estar entre 0 y 1, y no_finding_share entre 0 y 1 inclusive')
         if type(selection['max_negatives_per_patient']) is not int or selection['max_negatives_per_patient'] < 1:

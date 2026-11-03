@@ -1,0 +1,19 @@
+{
+  "dataset": "nih",
+  "target": "Effusion",
+  "metadata": "data/raw/nih/Data_Entry_2017_v2020.csv",
+  "image_root": "data/raw/nih",
+  "output": "data/processed/nih_effusion_pa_modelo_b_v1",
+  "image_size": 224,
+  "normalization": "unit",
+  "frontal_only": true,
+  "views": ["PA"],
+  "selection": {
+    "positive_fraction": 0.4,
+    "no_finding_share": 0.65,
+    "max_negatives_per_patient": 3,
+    "train_positive_repeat": 3
+  },
+  "seed": 42,
+  "ratios": [0.7225, 0.1275, 0.15]
+}
