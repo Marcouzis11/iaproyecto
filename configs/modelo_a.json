@@ -1,0 +1,14 @@
+{
+  "data": "data/processed/nih_effusion_pa_40_60_v1",
+  "output": "models/modelo_a_densenet121_v1",
+  "architecture": "densenet121",
+  "pretrained": true,
+  "epochs": 15,
+  "patience": 4,
+  "batch_size": 32,
+  "learning_rate": 0.0001,
+  "weight_decay": 0.0001,
+  "augmentation": true,
+  "seed": 42,
+  "device": "auto"
+}
