@@ -31,6 +31,7 @@ rx-demo-datos = "rx_torax.demo:main"
 rx-entrenar = "rx_torax.training.train:main"
 rx-evaluar = "rx_torax.evaluation.evaluate:main"
 rx-comparar = "rx_torax.evaluation.compare:main"
+rx-predecir = "rx_torax.inference.predict:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

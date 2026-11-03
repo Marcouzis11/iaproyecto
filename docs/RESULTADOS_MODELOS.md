@@ -97,6 +97,17 @@ Los cinco casos más seguros de cada celda de la matriz:
 - Los **falsos negativos** con puntaje ~0,01 no muestran cambios evidentes a 224×224. Pueden ser derrames chicos que se pierden con la reducción, o errores de etiqueta.
 - Lo mismo se vio en validación: no es algo propio de test.
 
+## Probar el modelo con otra imagen
+`rx-predecir` le aplica a cada PNG, JPEG o TIFF la misma transformación que la preparación, y después el umbral 0,414 guardado en `modelo.pt`:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m rx_torax.inference.predict --modelo models/modelo_b_densenet121_v1 data/raw/nih/images/00010080_003.png
+```
+
+- Imprime el puntaje y la decisión de cada imagen. Con `--salida archivo.csv`, además los guarda.
+- Sobre imágenes de validación da los mismos puntajes que `rx-evaluar`.
+- Solo tiene sentido con radiografías PA de tórax. Con la prevalencia real, unas 4 de cada 5 alarmas serían falsas: ver la precisión con prevalencia real, más arriba.
+
 ## Conclusiones
 1. **El modelo aprende algo real:** AUC 0,87 en pacientes que nunca vio, y F1 0,74 contra 0,57 de la referencia trivial.
 2. **Validación sobreestimó el rendimiento.** La caída se explica en buena parte porque test tiene otra población de pacientes, no por haber elegido mal entre A y B.
