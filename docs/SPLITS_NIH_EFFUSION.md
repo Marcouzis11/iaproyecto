@@ -67,6 +67,8 @@ La [notebook de desbalance](../git-profe/06_feature_engineering_avanzado/03_desb
 - **Etiquetas:** NIH las extrajo automáticamente de informes médicos, así que contienen errores.
 - **Test oficial:** sus pacientes tienen más estudios por persona que los de train.
 
-## Pendiente para entrenar
-- **Modelo A (sacar negativas):** ya se puede entrenar con estos arrays.
-- **Modelo B (repetir positivas):** hay que generar un train con más negativas. Val y test deben quedar iguales; la selección usa un generador distinto por conjunto para eso.
+## Modelos
+- **Modelo A (sacar negativas):** se entrena con estos arrays.
+- **Modelo B (repetir positivas):** usa [`configs/nih_modelo_b.json`](../configs/nih_modelo_b.json), que agrega negativas solo en train (22.594 imágenes). Val y test quedan idénticos a los de esta versión.
+
+Resultados y comparación en [`RESULTADOS_MODELOS.md`](RESULTADOS_MODELOS.md).
