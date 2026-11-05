@@ -97,6 +97,27 @@ Los cinco casos más seguros de cada celda de la matriz:
 - Los **falsos negativos** con puntaje ~0,01 no muestran cambios evidentes a 224×224. Pueden ser derrames chicos que se pierden con la reducción, o errores de etiqueta.
 - Lo mismo se vio en validación: no es algo propio de test.
 
+## F1-Score: la métrica de éxito de la consigna
+La consigna pide medir el éxito con una métrica objetiva y compararla con una referencia sin IA, y da como ejemplo "alcanzar un F1-Score > 0,80". El F1 combina precisión y recall:
+
+**F1 = 2 · precisión · recall / (precisión + recall)**
+
+No cuenta los verdaderos negativos. Por eso, con 60% de negativas, no se infla como la exactitud.
+
+| | Modelo A, validación | Modelo B, validación | Modelo B, test |
+|---|---|---|---|
+| **F1 (IC 95%)** | 0,795 (0,769 a 0,821) | 0,800 (0,773 a 0,825) | **0,744 (0,726 a 0,761)** |
+| Precisión | 77,7% | 75,2% | 61,9% |
+| Recall | 81,4% | 85,5% | 93,1% |
+| Umbral | 0,379 | 0,414 | 0,414, el de validación |
+| Siempre positivo | 0,571 | 0,571 | 0,571 |
+
+- **Contra la referencia trivial:** el modelo la supera siempre. En test la diferencia es +0,17, y el intervalo queda entero por encima.
+- **Contra el 0,80 de la consigna:** validación queda justo en el límite (0,800, con un intervalo que incluye valores por debajo). Además es optimista, porque ahí se eligieron la época y el umbral. **Test no lo alcanza:** el intervalo entero queda por debajo de 0,80. El 0,80 no se fijó como objetivo antes de evaluar: se informa como la referencia de la consigna.
+- **A contra B:** la diferencia de F1 en validación es +0,005 (−0,010 a +0,021). Empatan.
+- **Con umbral 0,5,** test daría 0,755. No se usa: elegir el umbral mirando test invalidaría la evaluación.
+- **Depende de la proporción de positivos.** Con el mismo recall y la misma especificidad de test, el F1 sería 0,34 con 9,8% de positivos (todo NIH PA) y 0,47 con 15,8% (test oficial completo). El 0,744 vale para conjuntos con 40% de positivos.
+
 ## Probar el modelo con otra imagen
 `rx-predecir` le aplica a cada PNG, JPEG o TIFF la misma transformación que la preparación, y después el umbral 0,414 guardado en `modelo.pt`:
 

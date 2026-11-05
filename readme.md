@@ -2,7 +2,7 @@
 
 Proyecto académico de Inteligencia Artificial. Se propone comenzar con la clasificación binaria de un hallazgo y evaluar una ampliación multietiqueta según los datos y resultados.
 
-**Estado:** flujo de preparación implementado y comprobado con datos sintéticos. Hay auditoría, split por paciente y exportación de arrays para entrenamiento, validación y test. Todavía no se descargó ni procesó un dataset real, ni se entrenó un modelo.
+**Estado:** las radiografías PA de NIH están preparadas, los modelos A y B están entrenados y comparados, y el modelo B ya se evaluó en test. Falta la demo en GitHub Pages y completar el resto de este README.
 
 ## Demo
 
@@ -30,7 +30,14 @@ Está implementada la lectura de CSV genérico, CheXpert y NIH; la auditoría de
 
 ## Resultados
 
-Pendientes de entrenar y evaluar. No hay métricas medidas.
+La métrica principal es el **F1-Score**, como pide la consigna. El modelo final es el B (DenseNet121, con las positivas repetidas en train). Se evaluó una sola vez sobre 4.390 radiografías PA de 1.686 pacientes del test oficial de NIH:
+
+| | F1 (IC 95%) | AUC | Recall | Especificidad |
+|---|---|---|---|---|
+| Modelo B, test | **0,744** (0,726 a 0,761) | 0,869 | 93,1% | 61,8% |
+| Siempre positivo | 0,571 | 0,5 | 100% | 0% |
+
+Supera la referencia trivial, pero no llega al F1 de 0,80 que la consigna da como ejemplo. En validación había dado 0,800. El detalle, la comparación entre los modelos A y B y el análisis de errores están en [los resultados de los modelos](docs/RESULTADOS_MODELOS.md).
 
 ## Estructura del proyecto
 
