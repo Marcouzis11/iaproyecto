@@ -135,6 +135,8 @@ PYTHONPATH=src .venv/bin/python -m rx_torax.inference.predict --modelo models/mo
 3. **A vs B:** en validación no hay diferencia significativa en AUC ni en F1. B cambia el punto de operación hacia más recall y menos especificidad, y tarda más en entrenar.
 4. **El umbral elegido en validación queda bajo para test:** genera muchos falsos positivos. No se ajustó, porque eso sería usar test para decidir.
 
+## Siguiente experimento: modelo C
+Para intentar llegar a 0,80 se entrenó un modelo C con las negativas de train elegidas con la mezcla de estudios previos del test oficial. Se lo comparó con un control, sobre un test nuevo armado con pacientes de `train_val`. C saca F1 0,784 (0,736 a 0,823): baja los falsos positivos, pero no mejora el F1 de forma significativa y no llega a 0,80. El detalle está en [el modelo C](MODELO_C.md).
+
 ## Pendiente
 - Medir el efecto de los dispositivos anotando a mano una muestra de test.
-- Para una próxima versión: armar validación con una mezcla de estudios previos parecida a la de test, y evaluar regularización más fuerte o menos épocas. Cualquier modelo nuevo necesitaría otro conjunto de prueba independiente, porque este test ya se usó.
