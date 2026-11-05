@@ -12,7 +12,7 @@ from PIL import Image
 
 from rx_torax.data.metadata import audit, read_metadata
 from rx_torax.demo import generate
-from rx_torax.data.splits import select_balanced
+from rx_torax.data.splits import follow_up_bin, quotas, select_balanced
 from rx_torax.prepare import load_config, prepare
 from rx_torax.preprocessing.images import read_image, transform
 
@@ -276,6 +276,86 @@ class PreparationTests(unittest.TestCase):
                                             'max_negatives_per_patient': 3}}
         with self.assertRaisesRegex(ValueError, 'no alcanzan'):
             select_balanced({'train': rows, 'val': rows, 'test': rows}, config)
+
+    def composition_rows(self):
+        # Cada imagen es de un paciente distinto; los estudios previos 0, 5 y 12 caen en los tres grupos.
+        rows = {}
+        for name in ('train', 'val', 'test'):
+            rows[name] = [{'image_path': f'{name}_{kind}_{follow_up}_{i}.png',
+                           'patient_id': f'{name}_{kind}_{follow_up}_{i}', 'target': int(kind == 'pos'),
+                           'target_original': {'pos': 'Effusion', 'nf': 'No Finding', 'otro': 'Mass'}[kind],
+                           'follow_up': follow_up}
+                          for kind, sizes in [('pos', (60, 60, 30)), ('nf', (200, 200, 200)), ('otro', (200, 200, 200))]
+                          for follow_up, size in zip((0, 5, 12), sizes) for i in range(size)]
+        return rows
+
+    def test_composition_sets_follow_up_mix_and_keeps_val_and_test_paired(self):
+        rows = self.composition_rows()
+        mix = {'positives': {'0': 0.1, '1-9': 0.4, '10+': 0.5},
+               'negatives': {'No Finding': {'0': 0.3, '1-9': 0.2, '10+': 0.15},
+                             'otros hallazgos': {'0': 0.05, '1-9': 0.2, '10+': 0.1}}}
+        base = {'positive_fraction': 0.4, 'no_finding_share': 0.65, 'max_negatives_per_patient': 1}
+        plain = select_balanced(rows, {'seed': 42, 'selection': base})
+        control = select_balanced(rows, {'seed': 42, 'selection': base | {
+            'composition': mix | {'splits': ['val', 'test']}}})
+        mixed = select_balanced(rows, {'seed': 42, 'selection': base | {
+            'composition': mix | {'splits': ['train', 'val', 'test']}}})
+        self.assertEqual(control['train'], plain['train'])
+        self.assertEqual(control['val'], mixed['val'])
+        self.assertEqual(control['test'], mixed['test'])
+        cells = lambda chosen, target: Counter(
+            (r['target_original'] if target == 0 else 'pos', follow_up_bin(r['follow_up']))
+            for r in chosen if r['target'] == target)
+        negatives = {(k, b): mix['negatives'][k][b] for k in ('No Finding', 'otros hallazgos')
+                     for b in ('0', '1-9', '10+')}
+        renamed = lambda counts: {('Mass' if k == 'otros hallazgos' else k, b): v for (k, b), v in counts.items() if v}
+        # En val y test el grupo más escaso fija el total: 30 positivas con 10+ estudios son el 50%.
+        for name in ('val', 'test'):
+            self.assertEqual(cells(control[name], 1), {('pos', '0'): 6, ('pos', '1-9'): 24, ('pos', '10+'): 30})
+            self.assertEqual(cells(control[name], 0), renamed(quotas(90, negatives)))
+        self.assertEqual(sum(r['target'] for r in mixed['train']), 150)
+        self.assertEqual(cells(mixed['train'], 0), renamed(quotas(225, negatives)))
+
+    def test_quotas_add_up_to_the_total(self):
+        for total in (0, 1, 7, 90, 1001):
+            counts = quotas(total, {'a': 0.276, 'b': 0.2172, 'c': 0.1568, 'd': 0.35})
+            self.assertEqual(sum(counts.values()), total)
+
+    def test_composition_must_add_up(self):
+        path = self.root / 'mezcla.json'
+        composition = {'splits': ['val', 'test'], 'positives': {'0': 0.1, '1-9': 0.4, '10+': 0.4},
+                       'negatives': {'No Finding': {'0': 0.3, '1-9': 0.2, '10+': 0.15},
+                                     'otros hallazgos': {'0': 0.05, '1-9': 0.2, '10+': 0.1}}}
+        selection = {'positive_fraction': 0.4, 'no_finding_share': 0.65, 'max_negatives_per_patient': 1,
+                     'composition': composition}
+        path.write_text(json.dumps({'dataset': 'nih', 'target': 'Effusion', 'metadata': str(self.raw / 'metadata.csv'),
+                                    'image_root': str(self.raw), 'output': str(self.root / 'salida'),
+                                    'selection': selection}), encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'sumar 1'):
+            load_config(path)
+
+    def test_exclude_official_test_splits_only_train_val(self):
+        rows = self.rows()
+        self.write_rows([{'Image Index': Path(r['image_path']).name, 'Patient ID': r['patient_id'],
+                          'Finding Labels': 'Effusion' if int(r['target']) else 'No Finding',
+                          'View Position': 'PA', 'Follow-up #': '0'} for r in rows])
+        train = [Path(r['image_path']).name for r in rows if int(r['patient_id'][1:]) < 50]
+        test = [Path(r['image_path']).name for r in rows if int(r['patient_id'][1:]) >= 50]
+        (self.raw/'train_val_list.txt').write_text('\n'.join(train))
+        (self.raw/'test_list.txt').write_text('\n'.join(test))
+        self.config.update(dataset='nih', target='Effusion', frontal_only=True, exclude_official_test=True,
+                           ratios=[0.6, 0.2, 0.2])
+        out = self.run_pipeline()
+        exported = {}
+        for name in ('train', 'val', 'test'):
+            with (out/f'{name}.csv').open(newline='', encoding='utf-8') as stream:
+                exported[name] = {Path(r['image_path']).name for r in csv.DictReader(stream)}
+        self.assertTrue(all(exported.values()))
+        self.assertEqual(set().union(*exported.values()), set(train))
+        report = json.loads((out/'report.json').read_text())
+        self.assertEqual(report['split_method'], 'seeded_patient_search_without_official_test')
+        test_report = report['splits']['test']
+        self.assertEqual(test_report['follow_up_bins']['positives'], {'0': test_report['class_1']})
 
     def test_nih_official_test_is_preserved(self):
         rows = self.rows()

@@ -119,6 +119,19 @@ class EvaluationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'mismo conjunto'):
             compare([model, other], self.root / 'otra', device='cpu')
 
+    def test_compare_on_test_only_reads_saved_predictions(self):
+        model = self.model('a')
+        copy = self.root / 'copia'
+        shutil.copytree(model, copy)
+        with self.assertRaisesRegex(ValueError, 'primero hay que evaluar'):
+            compare([model, copy], self.root / 'comparacion', device='cpu', split='test')
+        evaluate(model, 'test', device='cpu')
+        evaluate(copy, 'test', device='cpu')
+        report = compare([model, copy], self.root / 'comparacion', ['A', 'A2'], split='test')
+        self.assertEqual((report['split'], report['device']), ('test', 'None'))
+        self.assertEqual(report['differences']['f1_diferencia'], 0.0)
+        self.assertTrue((self.root / 'comparacion' / 'comparacion_test.png').is_file())
+
 
 if __name__ == '__main__':
     unittest.main()
