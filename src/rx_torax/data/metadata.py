@@ -67,6 +67,8 @@ def read_metadata(config):
             matches = index.get(name, [])
             item.update(image_path=name, patient_id=row['Patient ID'].strip(),
                         target_original=row['Finding Labels'])
+            if 'Follow-up #' in row:
+                item['follow_up'] = int(row['Follow-up #'])
             if official:
                 item['split'] = official.get(name, '')
                 if not item['split']:

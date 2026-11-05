@@ -3,6 +3,57 @@
 import numpy as np
 
 NAMES = ('train', 'val', 'test')
+FOLLOW_UP_BINS = ('0', '1-9', '10+')
+NEGATIVE_KINDS = ('No Finding', 'otros hallazgos')
+
+
+def follow_up_bin(value):
+    return '0' if value == 0 else '1-9' if value < 10 else '10+'
+
+
+def negative_kind(row):
+    return 'No Finding' if row['target_original'] == 'No Finding' else 'otros hallazgos'
+
+
+def check_composition(composition, no_finding_share):
+    """Valida la mezcla de estudios previos pedida para positivas y negativas."""
+    if not isinstance(composition, dict) or composition.keys() != {'splits', 'positives', 'negatives'}:
+        raise ValueError('composition debe contener splits, positives y negatives')
+    splits = composition['splits']
+    if not isinstance(splits, list) or not splits or set(splits) - set(NAMES):
+        raise ValueError('composition.splits debe ser una lista con train, val o test')
+    negatives = composition['negatives']
+    tables = [composition['positives']] + ([negatives[k] for k in NEGATIVE_KINDS] if isinstance(negatives, dict)
+                                           and negatives.keys() == set(NEGATIVE_KINDS) else [None])
+    if not all(isinstance(t, dict) and t.keys() == set(FOLLOW_UP_BINS) and
+               all(isinstance(v, (int, float)) and v >= 0 for v in t.values()) for t in tables):
+        raise ValueError(f'composition: cada tabla necesita proporciones para {list(FOLLOW_UP_BINS)}; '
+                         f'negatives se divide en {list(NEGATIVE_KINDS)}')
+    if abs(sum(tables[0].values()) - 1) > 1e-3 or abs(sum(map(sum, (t.values() for t in tables[1:]))) - 1) > 1e-3:
+        raise ValueError('composition: las proporciones de positivas y de negativas deben sumar 1')
+    if abs(sum(negatives['No Finding'].values()) - no_finding_share) > 1e-3:
+        raise ValueError('composition: las negativas sin hallazgos deben sumar no_finding_share')
+
+
+def quotas(total, shares):
+    """Reparte total según shares por restos mayores, así la suma da exactamente total."""
+    scale = sum(shares.values())
+    exact = {key: total * share / scale for key, share in shares.items()}
+    counts = {key: int(value) for key, value in exact.items()}
+    for key in sorted(exact, key=lambda k: exact[k] - counts[k], reverse=True)[:total - sum(counts.values())]:
+        counts[key] += 1
+    return counts
+
+
+def sample_positives(positives, shares, rng):
+    """La mayor muestra de positivas que respeta la mezcla de estudios previos pedida."""
+    by_bin = {key: [r for r in positives if follow_up_bin(r['follow_up']) == key] for key in FOLLOW_UP_BINS}
+    total = min(int(len(by_bin[key]) / share) for key, share in shares.items() if share > 0)
+    counts = quotas(total, shares)
+    while any(counts[key] > len(by_bin[key]) for key in FOLLOW_UP_BINS):
+        total -= 1
+        counts = quotas(total, shares)
+    return [by_bin[key][int(i)] for key in FOLLOW_UP_BINS for i in rng.permutation(len(by_bin[key]))[:counts[key]]]
 
 
 def validate(splits):
@@ -61,22 +112,38 @@ def select_balanced(splits, config):
     derivado de la semilla, y la elección depende solo de etiquetas y pacientes.
     train_positive_repeat suma negativos solo en train, para el entrenamiento que
     repite positivos; val y test quedan iguales. Las repeticiones no se exportan.
+    composition fija la mezcla de estudios previos en los conjuntos que nombra. En val
+    y test también submuestrea positivas; en train las conserva todas.
     """
     selection = config['selection']
     fraction = selection['positive_fraction']
     share = selection['no_finding_share']
     cap = selection['max_negatives_per_patient']
     repeat = selection.get('train_positive_repeat', 1)
+    composition = selection.get('composition')
+    if composition and any('follow_up' not in r for rows in splits.values() for r in rows):
+        raise ValueError('composition necesita la columna Follow-up # de NIH')
     selected = {}
     for position, name in enumerate(NAMES):
         rows = sorted(splits[name], key=lambda r: r['image_path'])
-        positives = [r for r in rows if r['target'] == 1]
-        wanted = round(len(positives) * (repeat if name == 'train' else 1) * (1 - fraction) / fraction)
-        no_finding = round(wanted * share)
-        groups = [('No Finding', no_finding, [r for r in rows if r['target'] == 0 and r['target_original'] == 'No Finding']),
-                  ('otros hallazgos', wanted - no_finding,
-                   [r for r in rows if r['target'] == 0 and r['target_original'] != 'No Finding'])]
         rng = np.random.default_rng([config['seed'], position])
+        mixed = bool(composition) and name in composition['splits']
+        positives = [r for r in rows if r['target'] == 1]
+        if mixed and name != 'train':
+            positives = sample_positives(positives, composition['positives'], rng)
+        wanted = round(len(positives) * (repeat if name == 'train' else 1) * (1 - fraction) / fraction)
+        if mixed:
+            counts = quotas(wanted, {(k, b): composition['negatives'][k][b] for k in NEGATIVE_KINDS
+                                     for b in FOLLOW_UP_BINS})
+            # Primero los grupos con más estudios previos, que son los más escasos.
+            groups = [(f'{k}, {b} estudios previos', counts[k, b],
+                       [r for r in rows if r['target'] == 0 and negative_kind(r) == k
+                        and follow_up_bin(r['follow_up']) == b])
+                      for b in reversed(FOLLOW_UP_BINS) for k in NEGATIVE_KINDS]
+        else:
+            no_finding = round(wanted * share)
+            groups = [(k, count, [r for r in rows if r['target'] == 0 and negative_kind(r) == k])
+                      for k, count in zip(NEGATIVE_KINDS, (no_finding, wanted - no_finding))]
         negatives, per_patient = [], {}
         for label, count, candidates in groups:
             chosen = []
@@ -95,6 +162,13 @@ def select_balanced(splits, config):
 
 
 def make_splits(records, config):
+    suffix = ''
+    if config.get('exclude_official_test'):
+        if not any(r['split'] == 'test' for r in records):
+            raise ValueError('exclude_official_test necesita las listas oficiales de NIH')
+        # El test oficial ya se usó: sus imágenes quedan afuera y los tres conjuntos salen de train_val.
+        records = [dict(r, split='') for r in records if r['split'] != 'test']
+        suffix = '_without_official_test'
     supplied = {r['split'] for r in records if r['split']}
     if supplied:
         splits = {name: [r for r in records if r['split'] == name] for name in NAMES}
@@ -114,4 +188,4 @@ def make_splits(records, config):
     if config.get('selection'):
         splits = select_balanced(splits, config)
     validate(splits)
-    return splits, 'seeded_patient_search'
+    return splits, 'seeded_patient_search' + suffix

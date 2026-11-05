@@ -1,7 +1,8 @@
 """CLI: rx-comparar --modelos models/modelo_a_densenet121_v1 models/modelo_b_densenet121_v1 --salida models/comparacion_val.
 
-Compara dos modelos sobre el mismo conjunto de validación, con bootstrap pareado por paciente.
-Sirve para elegir el modelo final, así que no admite test.
+Compara dos modelos sobre el mismo conjunto, con bootstrap pareado por paciente.
+En validación sirve para elegir el modelo. En test (--conjunto test) solo lee las predicciones
+que ya guardó rx-evaluar: no vuelve a predecir ni elige nada.
 """
 
 import argparse
@@ -15,17 +16,31 @@ from pathlib import Path
 import numpy as np
 
 from rx_torax.evaluation.evaluate import (BOOTSTRAP, COLORS, bootstrap, intervals, load_model, load_rows, pyplot,
-                                          score, summary)
+                                          read_rows, score, summary)
 from rx_torax.evaluation.metrics import binary_metrics, roc_auc, roc_curve
 from rx_torax.training.train import load_split, pick_device, versions
 
 
-VAL_FILES = ('X_val.npy', 'y_val.npy', 'val.csv')
+SPLIT_NAMES = {'val': 'validación', 'test': 'test'}
 
 
-def same_validation(first, second):
+def same_split(first, second, split):
     return first.resolve() == second.resolve() or all(
-        filecmp.cmp(first / name, second / name, shallow=False) for name in VAL_FILES)
+        filecmp.cmp(first / name, second / name, shallow=False)
+        for name in (f'X_{split}.npy', f'y_{split}.npy', f'{split}.csv'))
+
+
+def saved_scores(model_dir, split, labels):
+    """Puntajes y umbral que guardó rx-evaluar, para no volver a predecir test."""
+    folder = Path(model_dir) / f'evaluacion_{split}'
+    if not folder.is_dir():
+        raise ValueError(f'{folder} no existe: primero hay que evaluar {split} con rx-evaluar')
+    rows = read_rows(folder / f'predicciones_{split}.csv')
+    if ([int(r['array_index']) for r in rows] != list(range(len(labels)))
+            or [int(r['target']) for r in rows] != labels.tolist()):
+        raise ValueError(f'{folder}: las predicciones no corresponden a {split}')
+    report = json.loads((folder / 'report.json').read_text(encoding='utf-8'))
+    return np.array([float(r['score']) for r in rows]), report['threshold']
 
 
 def read_history(model_dir):
@@ -33,14 +48,14 @@ def read_history(model_dir):
         return [{key: float(value) for key, value in row.items()} for row in csv.DictReader(stream)]
 
 
-def save_figure(path, labels, scored, histories):
+def save_figure(path, labels, scored, histories, split):
     plt = pyplot()
     figure, axes = plt.subplots(1, 3, figsize=(15, 4.6))
     axes[0].plot([0, 1], [0, 1], color=COLORS['muted'], ls='--', lw=1, label='Azar')
     for (name, (scores, _)), color in zip(scored.items(), (COLORS['first'], COLORS['second'])):
         fpr, tpr = roc_curve(labels, scores)
         axes[0].plot(fpr, tpr, color=color, lw=2, label=f'{name} (AUC {roc_auc(labels, scores):.3f})')
-    axes[0].set(xlabel='1 − especificidad', ylabel='Recall', title='Curva ROC en validación', xlim=(0, 1),
+    axes[0].set(xlabel='1 − especificidad', ylabel='Recall', title=f'Curva ROC en {SPLIT_NAMES[split]}', xlim=(0, 1),
                 ylim=(0, 1.01))
     axes[0].legend(loc='lower right')
     for (name, history), color in zip(histories.items(), (COLORS['first'], COLORS['second'])):
@@ -59,7 +74,7 @@ def save_figure(path, labels, scored, histories):
     plt.close(figure)
 
 
-def compare(model_dirs, output, names=None, device='auto'):
+def compare(model_dirs, output, names=None, device='auto', split='val'):
     output = Path(output)
     if output.exists():
         raise ValueError(f'La salida ya existe: {output}')
@@ -69,15 +84,22 @@ def compare(model_dirs, output, names=None, device='auto'):
     names = names or [path.name for path in model_dirs]
     reports = [json.loads((path / 'report.json').read_text(encoding='utf-8')) for path in model_dirs]
     datas = [Path(report['config']['data']) for report in reports]
-    if not same_validation(*datas):
-        raise ValueError('Los modelos no se validaron con el mismo conjunto: la comparación no sería pareada')
-    device = pick_device(device)
-    images, labels, indices = load_split(datas[0], 'val')
-    rows = load_rows(datas[0], 'val', labels)
-    scored = {}
-    for name, path in zip(names, model_dirs):
-        artifact, model = load_model(path, device)
-        scored[name] = (score(artifact, model, images, indices, device), artifact['threshold'])
+    if split not in SPLIT_NAMES:
+        raise ValueError(f'Conjunto desconocido: {split}')
+    if not same_split(*datas, split):
+        raise ValueError(f'Los modelos no usan el mismo conjunto de {SPLIT_NAMES[split]}: '
+                         'la comparación no sería pareada')
+    images, labels, indices = load_split(datas[0], split)
+    rows = load_rows(datas[0], split, labels)
+    if split == 'test':
+        device = None
+        scored = {name: saved_scores(path, split, labels) for name, path in zip(names, model_dirs)}
+    else:
+        device = pick_device(device)
+        scored = {}
+        for name, path in zip(names, model_dirs):
+            artifact, model = load_model(path, device)
+            scored[name] = (score(artifact, model, images, indices, device), artifact['threshold'])
     (first, (s1, t1)), (second, (s2, t2)) = scored.items()
 
     def paired(chosen):
@@ -88,7 +110,7 @@ def compare(model_dirs, output, names=None, device='auto'):
     samples = bootstrap(labels, patients, paired, BOOTSTRAP['rounds'], BOOTSTRAP['seed'])
     point = {first: summary(labels, s1, t1), second: summary(labels, s2, t2)}
     right1, right2 = (s1 >= t1) == (labels == 1), (s2 >= t2) == (labels == 1)
-    report = {'created_at': datetime.now(timezone.utc).isoformat(), 'split': 'val', 'device': str(device),
+    report = {'created_at': datetime.now(timezone.utc).isoformat(), 'split': split, 'device': str(device),
               'versions': versions(), 'models': dict(zip(names, map(str, model_dirs))), 'data': str(datas[0]),
               'images': len(labels), 'patients': int(len(set(patients))), 'positives': int(labels.sum()),
               'metrics': {name: point[name] | binary_metrics(labels, *scored[name]) for name in names},
@@ -105,14 +127,16 @@ def compare(model_dirs, output, names=None, device='auto'):
                            | {'train_samples_per_epoch': report.get('train_samples_per_epoch', report['train_images'])}
                            for name, report in zip(names, reports)},
               'correlation': float(np.corrcoef(s1, s2)[0, 1]),
-              'note': 'Época y umbral se eligieron con val: los valores absolutos son optimistas; la diferencia es '
-                      'pareada sobre las mismas imágenes y pacientes.'}
+              'note': ('Época y umbral se eligieron con val: los valores absolutos son optimistas; la diferencia es '
+                       'pareada sobre las mismas imágenes y pacientes.') if split == 'val' else
+                      ('Predicciones de la evaluación única de cada modelo; la diferencia es pareada sobre las '
+                       'mismas imágenes y pacientes.')}
     stage = output.with_name(output.name + '.parcial')
     if stage.exists():
         shutil.rmtree(stage)
     stage.mkdir(parents=True)
-    save_figure(stage / 'comparacion_val.png', labels, scored,
-                {name: read_history(path) for name, path in zip(names, model_dirs)})
+    save_figure(stage / f'comparacion_{split}.png', labels, scored,
+                {name: read_history(path) for name, path in zip(names, model_dirs)}, split)
     (stage / 'report.json').write_text(json.dumps(report, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
     stage.rename(output)
     return report
@@ -123,9 +147,10 @@ def main():
     parser.add_argument('--modelos', type=Path, nargs=2, required=True)
     parser.add_argument('--nombres', nargs=2, help='Nombres cortos para tablas y figuras')
     parser.add_argument('--salida', type=Path, required=True)
+    parser.add_argument('--conjunto', choices=sorted(SPLIT_NAMES), default='val')
     parser.add_argument('--dispositivo', default='auto')
     args = parser.parse_args()
-    report = compare(args.modelos, args.salida, args.nombres, args.dispositivo)
+    report = compare(args.modelos, args.salida, args.nombres, args.dispositivo, args.conjunto)
     print(json.dumps({'differences': report['differences'], 'intervals_95': report['intervals_95']}, indent=2,
                      ensure_ascii=False))
 

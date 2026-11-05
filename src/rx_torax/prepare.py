@@ -16,12 +16,13 @@ import numpy as np
 
 from rx_torax import __version__
 from rx_torax.data.metadata import audit, read_metadata
-from rx_torax.data.splits import NAMES, make_splits
+from rx_torax.data.splits import NAMES, check_composition, follow_up_bin, make_splits
 from rx_torax.preprocessing.images import transform
 
 
 DEFAULTS = {'image_size': 224, 'seed': 42, 'ratios': [0.7, 0.15, 0.15],
-            'normalization': 'unit', 'frontal_only': False, 'views': None, 'selection': None, 'split_attempts': 1000}
+            'normalization': 'unit', 'frontal_only': False, 'views': None, 'selection': None, 'split_attempts': 1000,
+            'exclude_official_test': False}
 
 
 def load_config(path):
@@ -47,6 +48,10 @@ def load_config(path):
         raise ValueError('ratios debe contener tres proporciones positivas que sumen 1')
     if type(config['frontal_only']) is not bool:
         raise ValueError('frontal_only debe ser true o false')
+    if type(config['exclude_official_test']) is not bool:
+        raise ValueError('exclude_official_test debe ser true o false')
+    if config['exclude_official_test'] and config['dataset'] != 'nih':
+        raise ValueError('exclude_official_test solo se admite para nih')
     views = config['views']
     if views is not None:
         if config['dataset'] == 'chexpert':
@@ -59,14 +64,17 @@ def load_config(path):
         keys = {'positive_fraction', 'no_finding_share', 'max_negatives_per_patient'}
         if config['dataset'] != 'nih':
             raise ValueError('selection solo se admite para nih')
-        if not isinstance(selection, dict) or selection.keys() - {'train_positive_repeat'} != keys:
-            raise ValueError(f'selection debe contener {sorted(keys)} y, opcionalmente, train_positive_repeat')
+        optional = {'train_positive_repeat', 'composition'}
+        if not isinstance(selection, dict) or selection.keys() - optional != keys:
+            raise ValueError(f'selection debe contener {sorted(keys)} y, opcionalmente, {sorted(optional)}')
         if type(selection.get('train_positive_repeat', 1)) is not int or selection.get('train_positive_repeat', 1) < 1:
             raise ValueError('train_positive_repeat debe ser un entero positivo')
         if not 0 < selection['positive_fraction'] < 1 or not 0 <= selection['no_finding_share'] <= 1:
             raise ValueError('positive_fraction debe estar entre 0 y 1, y no_finding_share entre 0 y 1 inclusive')
         if type(selection['max_negatives_per_patient']) is not int or selection['max_negatives_per_patient'] < 1:
             raise ValueError('max_negatives_per_patient debe ser un entero positivo')
+        if 'composition' in selection:
+            check_composition(selection['composition'], selection['no_finding_share'])
     if config['normalization'] not in {'unit', 'zscore'}:
         raise ValueError('normalization debe ser unit o zscore')
     for key in ['metadata', 'image_root', 'output']:
@@ -166,6 +174,11 @@ def prepare(config_path):
                                      'class_0': sum(r['target'] == 0 for r in rows),
                                      'class_1': sum(r['target'] == 1 for r in rows),
                                      'image_fraction': len(rows) / sum(len(v) for v in splits.values())}
+            if rows and 'follow_up' in rows[0]:
+                report['splits'][name]['follow_up_bins'] = {
+                    label: dict(sorted(Counter(follow_up_bin(r['follow_up']) for r in rows if r['target'] == target)
+                                       .items()))
+                    for label, target in (('positives', 1), ('negatives', 0))}
             print(f'{name}: {len(rows)} imágenes exportadas', flush=True)
         assert len(records) + len(exclusions) == source_count
         write_csv(stage / 'exclusiones.csv', exclusions)
