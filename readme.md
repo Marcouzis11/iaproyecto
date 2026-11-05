@@ -2,7 +2,7 @@
 
 Proyecto académico de Inteligencia Artificial. Se propone comenzar con la clasificación binaria de un hallazgo y evaluar una ampliación multietiqueta según los datos y resultados.
 
-**Estado:** las radiografías PA de NIH están preparadas, los modelos A y B están entrenados y comparados, y el modelo B ya se evaluó en test. Falta la demo en GitHub Pages y completar el resto de este README.
+**Estado:** las radiografías PA de NIH están preparadas, los modelos A y B están entrenados y comparados, el modelo B ya se evaluó en test, y el modelo C se evaluó contra un control en un test nuevo. Falta la demo en GitHub Pages y completar el resto de este README.
 
 ## Demo
 
@@ -38,6 +38,8 @@ La métrica principal es el **F1-Score**, como pide la consigna. El modelo final
 | Siempre positivo | 0,571 | 0,5 | 100% | 0% |
 
 Supera la referencia trivial, pero no llega al F1 de 0,80 que la consigna da como ejemplo. En validación había dado 0,800. El detalle, la comparación entre los modelos A y B y el análisis de errores están en [los resultados de los modelos](docs/RESULTADOS_MODELOS.md).
+
+Después se probó un modelo C, con las negativas de train elegidas con la mezcla de estudios previos del test oficial. Sobre un test nuevo de 1.313 radiografías sacó F1 **0,784** (0,736 a 0,823), contra 0,775 de un control. Bajó los falsos positivos, pero la mejora de F1 no es significativa. Ver [el modelo C](docs/MODELO_C.md).
 
 ## Estructura del proyecto
 
