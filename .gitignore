@@ -12,3 +12,32 @@ venv/
 # Entornos / secretos
 .env
 .env.*
+
+# Datos y artefactos locales: solo se versionan marcadores de directorio.
+/data/**
+!/data/**/
+!/data/**/.gitkeep
+/models/**
+!/models/**/
+!/models/**/.gitkeep
+# Excepción: el modelo final (B) se versiona para poder predecir sin entrenar.
+!/models/modelo_b_densenet121_v1/modelo.pt
+!/models/modelo_b_densenet121_v1/report.json
+!/models/modelo_b_densenet121_v1/historial.csv
+!/models/modelo_b_densenet121_v1/evaluacion_test/report.json
+
+# Material de la cátedra: queda local, no es parte del proyecto.
+/Slides/
+/git-profe/
+/consigna.pdf
+
+# Empaquetado de Python y temporales
+build/
+dist/
+*.egg-info/
+*.log
+Thumbs.db
+
+# Archivos intermedios de ejecución de notebooks
+/work/
+

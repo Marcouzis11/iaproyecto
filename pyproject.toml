@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rx-torax"
+version = "1.0.0"
+description = "Detección de derrame pleural (Effusion) en radiografías de tórax PA con DenseNet121"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "numpy==2.3.5",
+    "Pillow==12.3.0",
+    "torch==2.15.0",
+    "torchvision==0.29.2",
+    "matplotlib==3.10.7",
+]
+
+[project.optional-dependencies]
+notebooks = [
+    "notebook==7.4.7",
+    "ipykernel==6.30.1",
+    "nbformat==5.10.4",
+    "nbclient==0.10.2",
+]
+
+[project.scripts]
+rx-preparar = "rx_torax.prepare:main"
+rx-demo-datos = "rx_torax.demo:main"
+rx-entrenar = "rx_torax.training.train:main"
+rx-evaluar = "rx_torax.evaluation.evaluate:main"
+rx-comparar = "rx_torax.evaluation.compare:main"
+rx-predecir = "rx_torax.inference.predict:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["rx_torax*"]
