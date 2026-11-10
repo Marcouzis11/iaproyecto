@@ -1,0 +1,14 @@
+{
+  "data": "data/processed/demo_sintetica_v1",
+  "output": "models/demo_sintetica",
+  "architecture": "densenet121",
+  "pretrained": false,
+  "epochs": 2,
+  "patience": 1,
+  "batch_size": 8,
+  "learning_rate": 0.0001,
+  "weight_decay": 0.0001,
+  "augmentation": true,
+  "seed": 42,
+  "device": "cpu"
+}
