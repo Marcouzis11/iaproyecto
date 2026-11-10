@@ -1,3 +1,3 @@
-"""Preparación de radiografías. No incluye un modelo entrenado."""
+"""Clasificación de derrame pleural (Effusion) en radiografías de tórax PA de NIH."""
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
