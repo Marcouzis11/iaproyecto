@@ -5,22 +5,19 @@
 
 El primer notebook contiene todas las funciones: no importa módulos locales `.py`, no requiere JSON de `configs/` y permite trabajar desde sus propias celdas. Los scripts Python anteriores se conservan como alternativa de consola. Si se modifica una implementación, mantener ambas versiones coherentes y volver a ejecutar las pruebas de notebooks y de scripts.
 
-## Abrir en este PC
+## Abrir los notebooks
 
-Desde PowerShell en la raíz del repositorio:
+Con el entorno del proyecto creado (ver «Instalación» en el [README](../README.md)) y activado, desde la raíz del repositorio:
 
-```powershell
-.\.venv\Scripts\python.exe -m notebook notebooks/01_preparacion_radiografias.ipynb
+```bash
+python -m pip install -e ".[notebooks]"
+python -m ipykernel install --prefix .venv --name iaproyecto --display-name "Python (iaproyecto)"
+python -m notebook notebooks/01_preparacion_radiografias.ipynb
 ```
 
-Elegir el kernel **Python (iaproyecto)** y **Run All / Ejecutar todo**. El entorno y el kernel ya están instalados en este PC. Para instalarlos en otro clon:
+Elegir el kernel **Python (iaproyecto)** y **Run All / Ejecutar todo**.
 
-```powershell
-py -3.12 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e ".[notebooks]"
-.\.venv\Scripts\python.exe -m ipykernel install --prefix .venv --name iaproyecto --display-name "Python (iaproyecto)"
-.\.venv\Scripts\python.exe -m notebook notebooks/01_preparacion_radiografias.ipynb
-```
+Los notebooks cubren la preparación de los datos. El entrenamiento, la evaluación y la predicción se corren con los comandos `rx-*`; `scripts/flujo_completo.sh demo` muestra el flujo entero sin descargar el dataset.
 
 ## Usar radiografías reales
 

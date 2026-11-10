@@ -56,7 +56,7 @@ Se validaron contra el CSV original, con un script aparte del pipeline:
 - Edad media con/sin Effusion: 51,3/46,5 años en train y 49,9/47,2 en test. Hombres con/sin Effusion: 55%/54% en train y 55%/56% en test.
 
 ## Diferencia con el material de clase
-La [notebook de desbalance](../git-profe/06_feature_engineering_avanzado/03_desbalance.ipynb) y el flujo de preparación balancean **solo train**. Acá también se ajustan val y test porque el profesor pidió el mismo porcentaje en train y test. En val y test solo se eligen imágenes: no se repite ninguna ni se generan sintéticas.
+La notebook de desbalance de la cátedra (`06_feature_engineering_avanzado/03_desbalance.ipynb`) y el flujo de preparación balancean **solo train**. Acá también se ajustan val y test porque el profesor pidió el mismo porcentaje en train y test. En val y test solo se eligen imágenes: no se repite ninguna ni se generan sintéticas.
 
 **Consecuencia:** la proporción real en PA es ~10% en todo NIH y 15,8% en el test oficial. Con 40%, la precisión y el F1 salen más altos que con esas proporciones. Recall, especificidad y AUC dependen mucho menos de la proporción.
 
