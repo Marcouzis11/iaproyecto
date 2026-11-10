@@ -4,25 +4,26 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rx-torax"
-version = "0.1.0"
-description = "Preparación reproducible de radiografías para clasificación binaria"
-readme = "readme.md"
+version = "1.0.0"
+description = "Detección de derrame pleural (Effusion) en radiografías de tórax PA con DenseNet121"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11,<3.14"
-dependencies = ["numpy==2.3.5", "Pillow==12.3.0"]
+dependencies = [
+    "numpy==2.3.5",
+    "Pillow==12.3.0",
+    "torch==2.15.0",
+    "torchvision==0.29.2",
+    "matplotlib==3.10.7",
+]
 
 [project.optional-dependencies]
 notebooks = [
     "notebook==7.4.7",
     "ipykernel==6.30.1",
-    "matplotlib==3.10.7",
     "nbformat==5.10.4",
     "nbclient==0.10.2",
-]
-
-modelado = [
-    "torch==2.15.0",
-    "torchvision==0.29.2",
-    "matplotlib==3.10.7",
 ]
 
 [project.scripts]
