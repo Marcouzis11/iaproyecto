@@ -407,6 +407,7 @@ python -m notebook notebooks/01_preparacion_radiografias.ipynb
 
 - **Tiziano Bertorello** — [GitHub](https://github.com/tiziberto)
 - **Marcos Agustín García Mombello** — [GitHub](https://github.com/Marcouzis11)
+- **Martin Mousist** — sin perfil público de GitHub
 
 ---
 
