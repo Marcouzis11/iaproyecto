@@ -75,6 +75,31 @@ class PredictionTests(unittest.TestCase):
         with output.open(newline='', encoding='utf-8') as stream:
             self.assertEqual(len(list(csv.DictReader(stream))), 2)
 
+    def test_command_prints_json(self):
+        result = subprocess.run(
+            [sys.executable, '-m', 'rx_torax.inference.predict', '--modelo', str(self.model), '--json',
+             '--dispositivo', 'cpu', *map(str, self.paths['val'][:2])],
+            capture_output=True, text=True, check=True)
+        output = json.loads(result.stdout)
+        rows, artifact = predict(self.model, self.paths['val'][:2], 'cpu')
+        self.assertEqual(output['hallazgo'], 'Effusion')
+        self.assertAlmostEqual(output['umbral'], artifact['threshold'], places=6)
+        self.assertEqual([p['imagen'] for p in output['predicciones']], [row['image'] for row in rows])
+        for item, row in zip(output['predicciones'], rows):
+            self.assertAlmostEqual(item['puntaje'], row['score'], places=5)
+            self.assertEqual(item['positivo'], bool(row['predicted']))
+
+    def test_command_reports_errors_without_traceback(self):
+        bad = self.root / 'informe.png'
+        bad.write_text('no es una imagen', encoding='utf-8')
+        for arguments in (['--modelo', str(self.root / 'no_existe'), str(self.paths['val'][0])],
+                          ['--modelo', str(self.model), str(bad)]):
+            result = subprocess.run([sys.executable, '-m', 'rx_torax.inference.predict', '--dispositivo', 'cpu',
+                                     *arguments], capture_output=True, text=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertTrue(result.stderr.startswith('error: '), result.stderr)
+            self.assertNotIn('Traceback', result.stderr)
+
 
 if __name__ == '__main__':
     unittest.main()
