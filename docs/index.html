@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Derrame pleural en radiografías</title>
+  <meta name="description" content="DenseNet121 que detecta derrame pleural (Effusion) en radiografías de tórax PA de NIH ChestX-ray14. Trabajo final de Inteligencia Artificial, IUA 2026.">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+  <nav>
+    <div class="container">
+      <span class="brand">Derrame pleural · RX tórax</span>
+      <ul>
+        <li><a href="#problema">Problema</a></li>
+        <li><a href="#como">Cómo funciona</a></li>
+        <li><a href="#demo">Demo</a></li>
+        <li><a href="#resultados">Resultados</a></li>
+        <li><a href="#autores">Autores</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="container">
+      <p class="eyebrow">Trabajo final · Inteligencia Artificial · IUA 2026</p>
+      <h1>Detección de derrame pleural en radiografías de tórax</h1>
+      <p class="tagline">Una red DenseNet121 que recibe una radiografía PA y estima si tiene derrame pleural. Entrenada con NIH ChestX-ray14 y evaluada una sola vez sobre pacientes que nunca vio.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="https://github.com/Marcouzis11/iaproyecto">Ver repositorio</a>
+        <a class="btn btn-secondary" href="https://github.com/Marcouzis11/iaproyecto#readme">Leer el README</a>
+        <a class="btn btn-secondary" href="Informe_proceso_Effusion.pdf">Informe en PDF</a>
+      </div>
+    </div>
+  </header>
+
+  <section id="problema">
+    <div class="container">
+      <h2>El problema</h2>
+      <p>El derrame pleural es líquido acumulado entre el pulmón y la pared del tórax. En la radiografía se ve como una opacidad en las bases. Es frecuente en pacientes internados, y marcar las radiografías sospechosas podría ayudar a decidir cuáles revisar primero.</p>
+      <p>El proyecto responde una sola pregunta: <strong>¿esta radiografía PA tiene la etiqueta <em>Effusion</em> en NIH ChestX-ray14?</strong> La métrica de éxito es el <strong>F1-Score</strong>, y la referencia sin IA es marcar todo como positivo, que da F1 0,571 con 40% de positivos.</p>
+      <p>Es un prototipo académico: no diagnostica. Con la proporción real de derrames, la mayoría de sus alarmas serían falsas.</p>
+
+      <h3>Construido con</h3>
+      <div class="pills">
+        <span class="pill">Python 3.11</span>
+        <span class="pill">PyTorch</span>
+        <span class="pill">torchvision · DenseNet121</span>
+        <span class="pill">NumPy</span>
+        <span class="pill">Pillow</span>
+        <span class="pill">matplotlib</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="como">
+    <div class="container">
+      <h2>Cómo funciona</h2>
+      <ol class="steps">
+        <li><strong>Datos.</strong> De 112.120 radiografías de NIH quedan 67.298 PA válidas, sin AP ni duplicados.</li>
+        <li><strong>Separación por paciente.</strong> Test es la lista oficial de NIH; ningún paciente aparece en dos conjuntos.</li>
+        <li><strong>40% de positivas</strong> en train, validación y test, como pidió la cátedra.</li>
+        <li><strong>Transformación.</strong> Grises, 224×224 sin deformar, normalizado con la media y el desvío de train.</li>
+        <li><strong>Modelo.</strong> DenseNet121 preentrenada en ImageNet, con una salida. Early stopping por AUC de validación.</li>
+        <li><strong>Evaluación.</strong> Umbral elegido en validación; test una sola vez; intervalos bootstrap por paciente.</li>
+      </ol>
+      <p>Se compararon tres formas de armar train: sacar negativas (A), repetir positivas (B) y elegir negativas como las del test (C). El modelo final es el B.</p>
+    </div>
+  </section>
+
+  <section id="demo">
+    <div class="container">
+      <h2>Demo</h2>
+      <p>El MVP es un comando de consola. El modelo entrenado y cuatro radiografías de ejemplo vienen en el repositorio, así que corre apenas se instala:</p>
+<pre class="terminal">$ rx-predecir examples/radiografias/*.png
+modelo_b_densenet121_v1 · umbral 0.414 (elegido en validación)
+00000643_006.png  0.575  Effusion
+00004526_023.png  0.345  sin Effusion
+00022899_024.png  0.940  Effusion
+00030344_002.png  0.186  sin Effusion</pre>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Imagen</th><th>Etiquetas de NIH</th><th class="num">Puntaje</th><th>Resultado</th></tr></thead>
+          <tbody>
+            <tr><td><code>00022899_024</code></td><td>Consolidation, Effusion, Mass</td><td class="num">0,940</td><td class="ok">Verdadero positivo</td></tr>
+            <tr><td><code>00004526_023</code></td><td>Cardiomegaly, Effusion</td><td class="num">0,345</td><td class="ko">Falso negativo</td></tr>
+            <tr><td><code>00000643_006</code></td><td>Pneumothorax</td><td class="num">0,575</td><td class="ko">Falso positivo</td></tr>
+            <tr><td><code>00030344_002</code></td><td>No Finding</td><td class="num">0,186</td><td class="ok">Verdadero negativo</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Las cuatro se eligieron al azar, una por cada celda de la matriz de confusión, para mostrar aciertos y errores. Con <code>--json</code> el resultado sale en JSON, listo para otra aplicación. Abajo, los cinco casos más seguros de cada celda en el test oficial:</p>
+      <div class="figure narrow"><img src="img/test_modelo_b_ejemplos.png" alt="Grilla de radiografías del test: verdaderos positivos, falsos negativos, falsos positivos y verdaderos negativos, con su puntaje"></div>
+      <p class="figure-caption">Varios falsos positivos con puntaje 0,98 muestran opacidades evidentes: las etiquetas de NIH salen de procesar informes, y tienen errores.</p>
+    </div>
+  </section>
+
+  <section id="resultados">
+    <div class="container">
+      <h2>Resultados</h2>
+      <p>Modelo B en el test oficial de NIH: 4.390 radiografías de 1.686 pacientes, evaluadas una sola vez con el umbral elegido en validación.</p>
+
+      <div class="stats">
+        <div class="stat-card"><div class="value">0,744</div><div class="label">F1 en test (IC 0,726 a 0,761)</div></div>
+        <div class="stat-card"><div class="value">0,571</div><div class="label">F1 sin IA: siempre positivo</div></div>
+        <div class="stat-card"><div class="value">0,869</div><div class="label">AUC en test</div></div>
+        <div class="stat-card"><div class="value">93%</div><div class="label">Recall · especificidad 62%</div></div>
+      </div>
+
+      <div class="figure"><img src="img/test_modelo_b.png" alt="Curva ROC, matriz de confusión y distribución de puntajes del modelo B en el test oficial"></div>
+
+      <h3>Todos los modelos</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Modelo</th><th>Conjunto</th><th class="num">F1 (IC 95%)</th><th class="num">AUC</th></tr></thead>
+          <tbody>
+            <tr><td>A · sacar negativas</td><td>Validación</td><td class="num">0,795 (0,769–0,821)</td><td class="num">0,898</td></tr>
+            <tr><td>B · repetir positivas</td><td>Validación</td><td class="num">0,800 (0,773–0,825)</td><td class="num">0,905</td></tr>
+            <tr class="highlight"><td>B · modelo final</td><td>Test oficial</td><td class="num">0,744 (0,726–0,761)</td><td class="num">0,869</td></tr>
+            <tr><td>Control</td><td>Test nuevo</td><td class="num">0,775 (0,729–0,814)</td><td class="num">0,895</td></tr>
+            <tr><td>C · negativas como el test</td><td>Test nuevo</td><td class="num">0,784 (0,736–0,823)</td><td class="num">0,897</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Qué aprendimos</h3>
+      <ul>
+        <li><strong>Supera claramente la referencia sin IA,</strong> pero no llega al 0,80 que la consigna da de ejemplo.</li>
+        <li><strong>Validación fue optimista.</strong> El test oficial tiene muchos más pacientes con 10 o más estudios previos, y ahí el modelo confunde más: podría estar aprendiendo "paciente internado" además de "derrame".</li>
+        <li><strong>El modelo C bajó los falsos positivos</strong> de forma significativa, pero el F1 no mejoró: con AUC ~0,90, ningún umbral pasa de 0,80.</li>
+        <li><strong>Con la proporción real</strong> (9,8% de derrames) el F1 sería 0,34: sirve, como mucho, para priorizar estudios.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="autores">
+    <div class="container">
+      <h2>Autores</h2>
+      <div class="authors">
+        <div class="author-card">
+          <div class="name">Tiziano Bertorello</div>
+          <a href="https://github.com/tiziberto">GitHub</a>
+        </div>
+        <div class="author-card">
+          <div class="name">Marcos Agustín García Mombello</div>
+          <a href="https://github.com/Marcouzis11">GitHub</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <p>
+        Trabajo final de Inteligencia Artificial · Facultad de Ingeniería, CRUC-IUA, Universidad de la Defensa Nacional · 2026 · Docente: Ing. Hernando Alexis González<br>
+        Datos: NIH ChestX-ray14, NIH Clinical Center (Wang et al., CVPR 2017) ·
+        <a href="https://github.com/Marcouzis11/iaproyecto">Código fuente en GitHub</a> · Licencia MIT
+      </p>
+    </div>
+  </footer>
+
+</body>
+</html>
