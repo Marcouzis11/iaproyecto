@@ -1,5 +1,7 @@
 # Plan de trabajo: clasificación de hallazgos en radiografías de tórax
 
+> **Documento histórico.** Es el plan del 21 de octubre de 2026, antes de elegir el dataset y entrenar. Lo que se hizo y los resultados están en el [README](../README.md). Los slides y la consigna que cita son material de la cátedra y no están en este repositorio.
+
 **Base conceptual:** los PDF de `Slides/`. **Base de datos:** las fuentes enlazadas en `datasets/` y los archivos que se obtengan de ellas.
 
 **Revisión:** 21 de octubre de 2026. **Estado:** planificación; no hay un modelo entrenado ni resultados medidos en este repositorio.
@@ -31,15 +33,15 @@ No se fijan de antemano cinco patologías, una red concreta ni una cifra de rend
 
 | Material local | Concepto útil | Aplicación al proyecto |
 |---|---|---|
-| [01 — Fundamentos IA/ML](<Slides/01 - Fundamentos IA_ML.pdf>), pp. 31, 47, 65–98 | Supervisado, modelos de clasificación y herramientas | Definir imagen/etiqueta; preparar Python y considerar KNN, SVM o árboles |
-| [02 — Introducción al análisis](<Slides/02 - Introducción al análisis de datos.pdf>), pp. 14–15 | Problema → datos → EDA → preparación → entrenamiento | Orden general del trabajo; ejemplo de un sistema visual |
-| [03 — EDA](<Slides/03 - Análisis exploratorio de datos (EDA).pdf>), pp. 19–23, 53–64 | Resúmenes numéricos, frecuencias, gráficos y contingencias | Describir imágenes, etiquetas, desbalance y coexistencia de hallazgos |
-| [04 — Faltantes](<Slides/04 - EDA - Causas e Identificacion de faltantes.pdf>), pp. 48–57 | Outliers y causas de faltantes | Diferenciar errores, casos raros, etiquetas ausentes e incertidumbre |
-| [05 — Limpieza](<Slides/05 - Procesamiento y limpieza de datos.pdf>), pp. 6–14, 17–24, 37–38 | Desbalance, particiones, limpieza y codificación | Preparar metadatos y la variable objetivo |
-| [06 — Nuevas features](<Slides/06 - Procesamiento y nuevas features.pdf>), pp. 5, 8–12, 19–31, 51 | Fuga, features, escalado, balance y preparación de imágenes | Construir un pipeline que aprenda transformaciones solo de train |
-| [08 — Optimización](<Slides/08 - Problemas de optimización.pdf>), pp. 24–26 | Gradiente y tasa de aprendizaje | Explicar el ajuste si el modelo elegido utiliza optimización por gradiente |
-| [09 — Aprendizaje automático](<Slides/09 - Aprendizaje automático.pdf>), pp. 16–23, 24–47 | Generalización, sesgo/varianza, validación e hiperparámetros | Comparar candidatos y separar selección de evaluación final |
-| [EXTRA — Computer Vision I](<Slides/EXTRA - Computer Vision I.pdf>), pp. 24–29, 34–42, 44–75 | Matrices, canales, lectura, grises, umbralización y filtros | Inspeccionar las radiografías y experimentar con su representación |
+| 01 — Fundamentos IA/ML, pp. 31, 47, 65–98 | Supervisado, modelos de clasificación y herramientas | Definir imagen/etiqueta; preparar Python y considerar KNN, SVM o árboles |
+| 02 — Introducción al análisis, pp. 14–15 | Problema → datos → EDA → preparación → entrenamiento | Orden general del trabajo; ejemplo de un sistema visual |
+| 03 — EDA, pp. 19–23, 53–64 | Resúmenes numéricos, frecuencias, gráficos y contingencias | Describir imágenes, etiquetas, desbalance y coexistencia de hallazgos |
+| 04 — Faltantes, pp. 48–57 | Outliers y causas de faltantes | Diferenciar errores, casos raros, etiquetas ausentes e incertidumbre |
+| 05 — Limpieza, pp. 6–14, 17–24, 37–38 | Desbalance, particiones, limpieza y codificación | Preparar metadatos y la variable objetivo |
+| 06 — Nuevas features, pp. 5, 8–12, 19–31, 51 | Fuga, features, escalado, balance y preparación de imágenes | Construir un pipeline que aprenda transformaciones solo de train |
+| 08 — Optimización, pp. 24–26 | Gradiente y tasa de aprendizaje | Explicar el ajuste si el modelo elegido utiliza optimización por gradiente |
+| 09 — Aprendizaje automático, pp. 16–23, 24–47 | Generalización, sesgo/varianza, validación e hiperparámetros | Comparar candidatos y separar selección de evaluación final |
+| EXTRA — Computer Vision I, pp. 24–29, 34–42, 44–75 | Matrices, canales, lectura, grises, umbralización y filtros | Inspeccionar las radiografías y experimentar con su representación |
 
 No es necesario utilizar todos los temas. Agentes, BFS, A*, Hanoi y algoritmos genéticos no resuelven una necesidad inicial de este clasificador. El slide 10 desarrolla regresión: sus errores MAE/MSE/RMSE no se trasladan automáticamente a esta clasificación. La regularización ya tiene una base general en el slide 09, p. 47.
 
