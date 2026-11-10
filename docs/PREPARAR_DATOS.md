@@ -1,35 +1,22 @@
 # Preparar radiografías para entrenamiento, validación y test
 
-El flujo está implementado. Se verificó con imágenes sintéticas y CSV de prueba de los tres formatos; todavía no se ejecutó contra una descarga real de NIH o CheXpert. No incluye entrenamiento ni descarga automática. Descargar los datos de las fuentes de `datasets/` y descomprimirlos antes de preparar.
+El flujo está implementado y es el que preparó NIH ChestX-ray14 para todos los modelos del proyecto. Los adaptadores de CheXpert y de CSV genérico están probados con datos sintéticos, pero no se usaron con descargas reales. No descarga datos: bajarlos y descomprimirlos antes de preparar (ver «El dataset» en el [README](../README.md)).
 
 ## Alternativa visual: todo el flujo en notebooks
 
 `notebooks/01_preparacion_radiografias.ipynb` contiene la implementación completa en sus celdas, además de configuración, tablas, gráficos y exportación. No importa los módulos locales `.py`. `notebooks/02_pruebas_pipeline.ipynb` verifica ese código con 12 pruebas. Ambos se comprobaron ejecutando todas sus celdas con un kernel nuevo.
 
-En el entorno ya instalado de este PC:
+Con el entorno activado y las dependencias de notebooks instaladas (`python -m pip install -e ".[notebooks]"`):
 
-```powershell
-.\.venv\Scripts\python.exe -m notebook notebooks/01_preparacion_radiografias.ipynb
+```bash
+python -m notebook notebooks/01_preparacion_radiografias.ipynb
 ```
 
-Elegir el kernel `Python (iaproyecto)` y ejecutar de arriba hacia abajo. La configuración está dentro del notebook: comienza en modo demo y se puede cambiar por NIH, CheXpert o genérico. Las rutas y el hallazgo también se ajustan allí; en este modo no hace falta editar los JSON de consola. Ver `notebooks/README.md` para instalar el entorno y registrar el kernel en otro equipo.
+Elegir el kernel del entorno y ejecutar de arriba hacia abajo. La configuración está dentro del notebook: comienza en modo demo y se puede cambiar por NIH, CheXpert o genérico. Las rutas y el hallazgo también se ajustan allí; en este modo no hace falta editar los JSON de consola. Ver `notebooks/README.md` para instalar el entorno y registrar el kernel en otro equipo.
 
 ## 1. Entorno
 
-Abrir PowerShell en el repositorio:
-
-```powershell
-cd C:\Users\marco\OneDrive\Documentos\GitHub\iaproyecto
-```
-
-En este PC ya se dejó instalado `.venv`. Para recrearlo en otro equipo, instalar Python 3.12 y ejecutar:
-
-```powershell
-py -3.12 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e .
-```
-
-No es necesario activar el entorno. `pyproject.toml` fija las versiones de NumPy y Pillow; Python admitido: 3.11–3.13. El recorrido se comprobó con Python 3.12.14. Pillow se usa para la lectura y el redimensionado de imágenes, en lugar de agregar OpenCV como dependencia de esta primera etapa.
+Seguir la sección «Instalación» del [README](../README.md). Con el entorno activado quedan disponibles los comandos `rx-preparar`, `rx-demo-datos`, `rx-entrenar`, `rx-evaluar`, `rx-comparar` y `rx-predecir`. Python admitido: 3.11 a 3.13; los modelos se entrenaron con 3.11. Pillow se usa para leer y redimensionar las imágenes, en lugar de agregar OpenCV como dependencia.
 
 ## 2. Elegir el formato de entrada
 
@@ -50,22 +37,22 @@ data/raw/CheXpert-v1.0-small/
 
 El adaptador requiere `Path` y una columna de hallazgo como `Pleural Effusion`. Extrae el identificador `patientNNNNN` de la ruta. Si `frontal_only` es `true`, requiere `Frontal/Lateral` y conserva `Frontal`. Solo acepta etiquetas explícitas 0 y 1; excluye y registra -1, vacío y valores inválidos. Esta política reduce la muestra y debe documentarse en el informe.
 
-```powershell
-.\.venv\Scripts\python.exe -m rx_torax.prepare --config configs/chexpert.json
+```bash
+rx-preparar --config configs/chexpert.json
 ```
 
 El JSON de ejemplo subdivide únicamente `train.csv` en un train/val/test interno. **No es una evaluación sobre el test oficial de CheXpert.** Los archivos oficiales no suministrados se conservan fuera del flujo. Si se cuenta con particiones oficiales utilizables, preparar un CSV con columna `split`, como se explica más abajo, para conservarlas; no renombrar automáticamente el `valid.csv` oficial como test.
 
 ### NIH ChestX-ray14
 
-Editar `configs/nih.json`. Ubicar `Data_Entry_2017.csv` e imágenes descomprimidas debajo de `data/raw/nih`. Se buscan imágenes recursivamente por `Image Index`, por lo que pueden conservarse los directorios `images_001/images/`, etc. Nombres ambiguos en distintas carpetas se excluyen y registran.
+Editar `configs/nih.json`. Ubicar `Data_Entry_2017_v2020.csv` e imágenes descomprimidas debajo de `data/raw/nih`. Se buscan imágenes recursivamente por `Image Index`, por lo que pueden conservarse los directorios `images_001/images/`, etc. Nombres ambiguos en distintas carpetas se excluyen y registran.
 
 Se requieren `Image Index`, `Patient ID`, `Finding Labels` y, con filtro frontal, `View Position`. `target: "Effusion"` significa 1 si ese hallazgo aparece en las etiquetas separadas por `|`, y 0 si no aparece. Es ausencia de anotación positiva para ese hallazgo; no garantiza ausencia clínica ni que la imagen sea normal. Los casos con otros hallazgos se conservan como negativos para el target si no incluyen el hallazgo elegido.
 
-Si están disponibles `train_val_list.txt` y `test_list.txt`, colocarlos junto a `Data_Entry_2017.csv`. Se detectan automáticamente: se conserva el test listado y se obtiene validación solo del grupo train/val. Si aparece una sola lista o un paciente cruza train/test, el programa se detiene. Con una descarga parcial, el test resultante contiene únicamente las imágenes disponibles y válidas de la lista; el reporte permite documentar esa limitación. Sin listas ni columna `split`, se genera una partición interna.
+Si están disponibles `train_val_list.txt` y `test_list.txt`, colocarlos junto a `Data_Entry_2017_v2020.csv`. Se detectan automáticamente: se conserva el test listado y se obtiene validación solo del grupo train/val. Si aparece una sola lista o un paciente cruza train/test, el programa se detiene. Con una descarga parcial, el test resultante contiene únicamente las imágenes disponibles y válidas de la lista; el reporte permite documentar esa limitación. Sin listas ni columna `split`, se genera una partición interna.
 
-```powershell
-.\.venv\Scripts\python.exe -m rx_torax.prepare --config configs/nih.json
+```bash
+rx-preparar --config configs/nih.json
 ```
 
 ### Radiografías propias o un CSV normalizado
@@ -83,8 +70,8 @@ Estos tres registros solo ilustran el formato: no alcanzan para preparar tres co
 
 `image_path` debe estar dentro de `image_root`; se admite una ruta absoluta solo si sigue dentro de esa carpeta. `patient_id` es obligatorio y debe identificar a la misma persona de forma consistente. `view` es opcional salvo que se active `frontal_only`; en ese caso se admiten `PA`, `AP` o `FRONTAL`. No usar el nombre de archivo como sustituto del paciente si una persona tiene varias imágenes. No unir fuentes con identificadores incompatibles sin armonizarlos previamente.
 
-```powershell
-.\.venv\Scripts\python.exe -m rx_torax.prepare --config configs/generic.json
+```bash
+rx-preparar --config configs/generic.json
 ```
 
 También se puede ejecutar `scripts/preparar.ps1 -Config configs/generic.json` si la política local permite scripts PowerShell.
@@ -148,8 +135,8 @@ X_test_vectores = X_test.reshape(len(X_test), -1)
 
 Entrenar solo con train; seleccionar configuraciones con val; evaluar el modelo final con test. Los CSV incluyen metadatos para trazabilidad: no introducir automáticamente `patient_id`, rutas o hashes como features.
 
-```powershell
-.\.venv\Scripts\python.exe examples/cargar_datos.py --data data/processed/mis_radiografias_v1
+```bash
+python examples/cargar_datos.py --data data/processed/mis_radiografias_v1
 ```
 
 El uso de memmap reduce la RAM necesaria para preparar/cargar arrays, pero un clasificador posterior puede copiarlos en memoria. A 224×224 float32, cada imagen preparada ocupa aproximadamente 196 KiB; 100.000 imágenes requieren unos 18,7 GiB solo para `X`. Se comprueba espacio libre antes de exportar. Para empezar, usar una muestra de pacientes con suficiente soporte por clase y registrar que la descarga es parcial.
@@ -158,25 +145,20 @@ El programa no sobrescribe salidas existentes: cambiar `output` a una carpeta nu
 
 ## 5. Prueba inmediata sin descargar radiografías
 
-En este PC ya se ejecutaron estos comandos. La demo quedó en `data/processed/demo_sintetica_v1`. Para cargarla:
-
-```powershell
-.\.venv\Scripts\python.exe examples/cargar_datos.py --data data/processed/demo_sintetica_v1
+```bash
+rx-demo-datos
+rx-preparar --config configs/demo.json
+python examples/cargar_datos.py --data data/processed/demo_sintetica_v1
 ```
 
-Para repetir desde cero en otro clon:
-
-```powershell
-.\.venv\Scripts\python.exe -m rx_torax.demo
-.\.venv\Scripts\python.exe -m rx_torax.prepare --config configs/demo.json
-```
+`scripts/flujo_completo.sh demo` hace lo mismo y además entrena, evalúa y predice sobre la demo.
 
 Genera 120 imágenes artificiales de 60 pacientes ficticios, con 84/18/18 imágenes en train/val/test. **No son radiografías ni permiten medir rendimiento clínico.** Es una comprobación de instalación, lectura, particiones y exportación. Si las carpetas de demo ya existen, no repetir los comandos de generación: usar los archivos existentes o cambiar las rutas de entrada/salida en una copia del JSON.
 
 Pruebas automatizadas:
 
-```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+```bash
+python -m unittest discover -s tests -v
 ```
 
 ## 6. Antes de entrenar sobre datos reales
@@ -185,8 +167,8 @@ Revisar `exclusiones.csv`, los conteos de `report.json` y una muestra visual de 
 
 ## Referencias de implementación
 
-- Plan local: `PLAN_PROYECTO_RX_TORAX.md`, etapas 1–4.
-- Ejemplos del docente: split/stratify, normalización, desbalance y EDA de imágenes en `git-profe/`.
+- Plan inicial: [`PLAN_INICIAL.md`](PLAN_INICIAL.md), etapas 1–4.
+- Notebooks de la cátedra sobre split/stratify, normalización, desbalance y EDA de imágenes (material del curso, no incluido en este repositorio).
 - [CheXpert: descripción oficial y etiquetas inciertas](https://stanfordmlgroup.github.io/competitions/chexpert/).
 - [Pillow: transformaciones de imágenes](https://pillow.readthedocs.io/en/stable/reference/ImageOps.html).
 - La búsqueda de particiones por paciente y los adaptadores son implementación propia del proyecto; no se atribuyen a una receta literal de los slides.
