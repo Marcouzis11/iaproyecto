@@ -1,4 +1,4 @@
-"""CLI: rx-entrenar --config configs/modelo_a.json. Usa train y val; nunca abre test."""
+"""CLI: rx-entrenar --config configs/modelo_a.json [--salida models/otra_carpeta]. Usa train y val; nunca abre test."""
 
 import argparse
 import csv
@@ -24,9 +24,12 @@ DEFAULTS = {'architecture': 'densenet121', 'pretrained': True, 'epochs': 15, 'pa
             'device': 'auto'}
 
 
-def load_config(path):
+def load_config(path, output=None):
+    """Lee el JSON de entrenamiento; output reemplaza la carpeta de salida del JSON."""
     with Path(path).open(encoding='utf-8-sig') as stream:
         given = json.load(stream)
+    if output is not None:
+        given['output'] = str(output)
     required = {'data', 'output'}
     if not required <= given.keys() or given.keys() - required - set(DEFAULTS):
         raise ValueError(f"Configuración: faltan {sorted(required-given.keys())}; "
@@ -200,9 +203,14 @@ def train(config, limit=None):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--config', type=Path, required=True)
+    parser.add_argument('--salida', type=Path, help='Carpeta de salida en lugar de la del JSON (no debe existir)')
     parser.add_argument('--limit', type=int, help='Usa como máximo N imágenes por conjunto, para probar el flujo')
     args = parser.parse_args()
-    report = train(load_config(args.config), args.limit)
+    try:
+        config = load_config(args.config, args.salida)
+    except (ValueError, OSError) as error:
+        parser.exit(2, f'ERROR: {error}\n')
+    report = train(config, args.limit)
     print(json.dumps({'best_epoch': report['best_epoch'], 'val': report['val']}, indent=2))
 
 

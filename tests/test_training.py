@@ -105,6 +105,14 @@ class TrainingTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'ya existe'):
             load_config(path)
 
+    def test_output_override_replaces_the_json_output(self):
+        (self.root / 'a').mkdir()
+        path = self.root / 'config.json'
+        path.write_text(json.dumps({'data': str(self.data), 'output': str(self.root / 'a')}), encoding='utf-8')
+        self.assertEqual(load_config(path, self.root / 'b')['output'], str(self.root / 'b'))
+        with self.assertRaisesRegex(ValueError, 'ya existe'):
+            load_config(path, self.root / 'a')
+
     def test_unknown_config_key_is_refused(self):
         path = self.root / 'config.json'
         path.write_text(json.dumps({'data': 'd', 'output': str(self.root / 'x'), 'lr': 1}), encoding='utf-8')
