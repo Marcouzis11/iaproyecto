@@ -39,7 +39,7 @@ De las aceptadas se usan todas las positivas (6.589) y una muestra de negativas 
 1. **Selección de vista:** solo PA.
 2. **Auditoría:** se abre cada imagen, se detectan ilegibles y duplicados por hash de píxeles.
 3. **Split por paciente:** test es el oficial de NIH. Val es el 15% de los pacientes de `train_val_list.txt`.
-4. **Selección 60/40 en cada conjunto:** todas las positivas y negativas al azar con seed fija. Las negativas son 65% sin hallazgos y 35% con otros hallazgos (mezcla real en PA), con hasta 3 por paciente.
+4. **Selección 60/40 en cada conjunto:** todas las positivas y negativas al azar con seed fija. Las negativas son 65% sin hallazgos y 35% con otros hallazgos, con hasta 3 por paciente. El 65% sale de todas las negativas PA, test incluido (64,7%; solo con `train_val` da 67,1%).
 5. **Transformación:** escala de grises, 224×224 sin deformar (bordes negros) e intensidades en [0, 1].
 6. **Estadísticas solo con train:** media 0,508 y desvío 0,265, guardadas en `preprocessing.json` para aplicarlas sin recalcular a val, test e imágenes nuevas.
 
@@ -56,15 +56,18 @@ Se validaron contra el CSV original, por fuera del código de preparación. Se r
 - Edad media con/sin Effusion: 51,3/46,5 años en train y 49,9/47,2 en test. Hombres con/sin Effusion: 55%/54% en train y 55%/56% en test.
 
 ## Diferencia con el material de clase
-La notebook de desbalance de la cátedra (`06_feature_engineering_avanzado/03_desbalance.ipynb`) y el flujo de preparación balancean **solo train**. Acá también se ajustan val y test porque el profesor pidió el mismo porcentaje en train y test. En val y test solo se eligen imágenes: no se repite ninguna ni se generan sintéticas.
+La notebook de desbalance de la cátedra (`06_feature_engineering_avanzado/03_desbalance.ipynb`, celdas 14 y 15) y el flujo de preparación (slides 06, pp. 29, 31 y 35) balancean **solo train**. Acá también se ajustan val y test porque el profesor pidió el mismo porcentaje en train y test. En val y test solo se eligen imágenes: no se repite ninguna ni se generan sintéticas.
 
 **Consecuencia:** la proporción real en PA es ~10% en todo NIH y 15,8% en el test oficial. Con 40%, la precisión y el F1 salen más altos que con esas proporciones. Recall, especificidad y AUC dependen mucho menos de la proporción.
+
+Además, la mezcla 65/35 y el tope de 3 negativas por paciente también se aplicaron en val y test. En clase, lo que se calcula sale de train y en test solo se aplica (slides 06, pp. 30-31). Por eso el test es una **submuestra** del oficial, más fácil que el completo: sus negativas tienen menos pacientes con muchos estudios previos. El efecto sobre la especificidad está en [`RESULTADOS_MODELOS.md`](RESULTADOS_MODELOS.md).
 
 ## Limitaciones
 - **Dispositivos:** en una muestra chica de 96 fotos de la selección anterior, sin `images_010` y revisada a ojo, se ven cables, catéteres, puertos o implantes en ~30% de las positivas y ~13% de las negativas. NIH no los marca, así que siguen incluidos. El modelo podría aprender esa señal: hay que medirlo en la evaluación.
 - **Calidad de imagen:** en una muestra de 4.000 fotos PA, tomada antes de sumar `images_010`, los marcos blancos rondan el 0,3% y el contraste bajo el 1,3%. Se ven legibles, así que no se aplicó ningún filtro.
 - **Controles previos:** los pacientes con Effusion tienen más estudios previos, lo que puede agregar señales ajenas al hallazgo.
-- **Etiquetas:** NIH las extrajo automáticamente de informes médicos, así que contienen errores.
+- **Etiquetas:** NIH las extrajo automáticamente de informes médicos, así que contienen errores. Al revisar los outliers de train apareció una placa lateral etiquetada como PA (`00008347_002.png`, negativa); no se sacó para no rehacer los conjuntos.
+- **Outliers:** con IQR y ±3σ sobre el brillo y el contraste de train se marcan placas lavadas o con bordes, en proporción parecida en las dos clases; se conservan ([notebook 00](../notebooks/00_eda_nih_effusion.ipynb), sección 8). Reemplaza la revisión anterior de una muestra de 4.000.
 - **Test oficial:** sus pacientes tienen más estudios por persona que los de train.
 
 ## Modelos

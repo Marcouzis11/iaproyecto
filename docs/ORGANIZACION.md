@@ -19,7 +19,7 @@
 | `src/rx_torax/evaluation/` | Métricas, bootstrap por paciente, evaluación única en test y comparación pareada. |
 | `src/rx_torax/inference/` | `rx-predecir`: carga `modelo.pt` y predice sobre archivos de imagen. |
 | `configs/` | JSON de preparación (`nih*.json`, `demo.json`) y de entrenamiento (`modelo_*.json`). |
-| `models/` | Un directorio por modelo. En git solo está el modelo final (B); el resto se regenera. |
+| `models/` | Un directorio por modelo. En git están el modelo final (B) completo y los reportes livianos de todos los modelos y comparaciones (`report.json`, `historial.csv`); los pesos de A, C y el control se regeneran. |
 | `notebooks/` | Análisis exploratorio de NIH (guardado con resultados), preparación en celdas y sus pruebas. |
 | `tests/` | Pruebas automáticas con datos sintéticos (`unittest`). |
 | `scripts/` | `flujo_completo.sh` (demo o NIH de punta a punta) y `preparar.ps1` (Windows). |
@@ -36,7 +36,7 @@ Cada capa depende solo de las anteriores: la preparación no sabe nada del model
 | `feature/preprocesamiento` | Auditoría, split por paciente, selección 40/60 y preparación de NIH. |
 | `feature/modelado` | Entrenamiento, evaluación, predicción, modelos A, B y C, y documentación de la entrega. Parte de `feature/preprocesamiento`. |
 
-Cada etapa se desarrolla en su rama y se integra en `main` con un pull request cuando está revisada.
+Cada etapa se desarrolla en su rama y se integra en `main` con un pull request. `feature/modelado` salió de `feature/preprocesamiento` y las dos entraron juntas en el PR #1; la documentación posterior entró por ramas `docs/*` (PR #2 y #3). Los PR se integraron sin revisión formal en GitHub.
 
 ## Commits
 
@@ -44,4 +44,4 @@ Mensajes en español con prefijo semántico: `feat:` para funcionalidad nueva, `
 
 ## Experimentos
 
-Cada preparación, entrenamiento y evaluación guarda un `report.json` con la configuración completa, la semilla, las versiones de las librerías y las métricas. Ninguna salida se sobrescribe: los comandos se niegan a escribir en una carpeta existente, y `rx-evaluar` no evalúa dos veces el mismo conjunto.
+Cada preparación, entrenamiento y evaluación guarda un `report.json` con la configuración, la semilla, las versiones de las librerías y las métricas, y esos reportes están en git. La preparación, el entrenamiento y la evaluación se niegan a escribir en una carpeta existente, y `rx-evaluar` no evalúa dos veces el mismo conjunto.
