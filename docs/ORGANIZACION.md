@@ -20,7 +20,7 @@
 | `src/rx_torax/inference/` | `rx-predecir`: carga `modelo.pt` y predice sobre archivos de imagen. |
 | `configs/` | JSON de preparación (`nih*.json`, `demo.json`) y de entrenamiento (`modelo_*.json`). |
 | `models/` | Un directorio por modelo. En git solo está el modelo final (B); el resto se regenera. |
-| `notebooks/` | Preparación y EDA en celdas, y sus pruebas. |
+| `notebooks/` | Análisis exploratorio de NIH (guardado con resultados), preparación en celdas y sus pruebas. |
 | `tests/` | Pruebas automáticas con datos sintéticos (`unittest`). |
 | `scripts/` | `flujo_completo.sh` (demo o NIH de punta a punta) y `preparar.ps1` (Windows). |
 | `examples/` | Cuatro radiografías del test oficial y un ejemplo de carga de arrays. |

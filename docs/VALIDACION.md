@@ -15,7 +15,7 @@
 
 ## Comprobaciones sobre NIH
 
-Hechas con un script aparte del pipeline, contra el CSV original (detalle en [`SPLITS_NIH_EFFUSION.md`](SPLITS_NIH_EFFUSION.md)):
+Hechas contra el CSV original, por fuera del código de preparación. Se reproducen en la sección 6 de [`notebooks/00_eda_nih_effusion.ipynb`](../notebooks/00_eda_nih_effusion.ipynb); el detalle está en [`SPLITS_NIH_EFFUSION.md`](SPLITS_NIH_EFFUSION.md).
 
 - 0 pacientes compartidos y 0 imágenes idénticas entre conjuntos.
 - Todas las imágenes son PA y cada etiqueta coincide con la original.
