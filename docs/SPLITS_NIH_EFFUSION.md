@@ -46,7 +46,7 @@ De las aceptadas se usan todas las positivas (6.589) y una muestra de negativas 
 No se repiten imágenes ni se aplica augmentation en esta etapa.
 
 ## Verificaciones
-Se validaron contra el CSV original, con un script aparte del pipeline:
+Se validaron contra el CSV original, por fuera del código de preparación. Se reproducen, junto con el resto del análisis exploratorio, en [`notebooks/00_eda_nih_effusion.ipynb`](../notebooks/00_eda_nih_effusion.ipynb):
 - 0 pacientes compartidos y 0 imágenes idénticas entre conjuntos.
 - Todas las imágenes son PA, y cada `y` coincide con su etiqueta original.
 - Test contiene solo imágenes de `test_list.txt`; train y val, solo de `train_val_list.txt`.
