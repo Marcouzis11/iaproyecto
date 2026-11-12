@@ -92,9 +92,9 @@ No se admiten asignaciones parciales, clases ausentes tras la auditoría ni paci
 6. Calcula media y desviación únicamente de train, después del redimensionado y padding. Con `normalization: "unit"` conserva [0,1]; con `"zscore"` aplica a los tres conjuntos la media y desviación de train. Los valores de z-score pueden quedar fuera de [0,1].
 7. Exporta arrays, manifiestos y reporte. Comprueba que todos los registros de entrada estén contabilizados como aceptados o excluidos.
 
-No se imputa el target, no se balancea test ni validación, no se generan imágenes sintéticas de pacientes y no se eliminan imágenes por ser casos raros. No se aplica SMOTE, filtros o augmentation automáticamente. Si se prueba balanceo más adelante, hacerlo solo durante el entrenamiento.
+No se imputa el target, no se generan imágenes sintéticas de pacientes y no se eliminan imágenes por ser casos raros. No se aplica SMOTE, filtros o augmentation automáticamente. Sin la opción `selection`, test y validación conservan su proporción real. Las configuraciones de NIH (`configs/nih*.json`) sí la usan: dejan 40% de positivas en los tres conjuntos, por pedido del profesor ([detalle](SPLITS_NIH_EFFUSION.md#diferencia-con-el-material-de-clase)). La repetición de positivas y el aumento de datos se aplican solo durante el entrenamiento.
 
-Se admiten PNG/JPEG y TIFF de un solo frame, en grises de 8/16 bits o RGB de 8 bits. Se rechazan otros modos para evitar conversiones silenciosas. **DICOM no está implementado**: requiere una etapa específica que respete su interpretación de intensidades. Los originales nunca se sobrescriben.
+Se admiten PNG/JPEG y TIFF de un solo frame, en grises de 8/16 bits, RGB de 8 bits o RGBA de 8 bits totalmente opaca (algunas PNG de NIH). Se rechazan otros modos para evitar conversiones silenciosas. **DICOM no está implementado**: requiere una etapa específica que respete su interpretación de intensidades. Los originales nunca se sobrescriben.
 
 ## 4. Archivos listos para entrenar y testear
 

@@ -7,7 +7,7 @@ El modelo B sacó F1 0,744 en el test oficial, contra 0,800 en validación. El a
 - **El problema son los falsos positivos.** Recall 93% y especificidad 62%. Con la especificidad de validación (81%), el F1 en test habría sido 0,84.
 - **El umbral no lo arregla.** Aun eligiendo el umbral mirando test, que no vale, el mejor F1 posible era 0,769.
 - **Los falsos positivos se concentran en negativas difíciles.** De los 1.005, 425 son de pacientes con 10 o más estudios previos y 489 tienen otros hallazgos.
-- **El test oficial es otra población.** El 53% de sus positivas y el 25% de sus negativas son de pacientes con 10 o más estudios previos. En `train_val` son el 22% y el 9%.
+- **El test oficial es otra población.** En la submuestra evaluada con B, el 53% de las positivas y el 25% de las negativas son de pacientes con 10 o más estudios previos (en las negativas PA del test oficial completo, el 38%). En `train_val` son el 22% y el 9%.
 
 **Hipótesis:** si las negativas de train tienen la misma mezcla de estudios previos que el test oficial, el modelo aprende a no confundir "paciente con muchos estudios" con derrame, y baja los falsos positivos.
 
@@ -15,7 +15,7 @@ El modelo B sacó F1 0,744 en el test oficial, contra 0,800 en validación. El a
 El test oficial ya se usó para evaluar B y para analizar sus errores. Evaluar ahí un modelo diseñado a partir de esos errores daría un resultado optimista. Por eso:
 - Las imágenes del test oficial quedan **afuera** de este experimento.
 - Train, validación y un **test nuevo** salen de los pacientes de `train_val_list.txt`, divididos por paciente.
-- Val y test nuevo se arman con la **misma mezcla que el test oficial**, para medir sobre una población parecida.
+- Val y test nuevo se arman con la **misma mezcla de estudios previos que la submuestra del test oficial evaluada con B**, para medir sobre una población parecida.
 
 ## Datos
 Configs: [`nih_v2_control.json`](../configs/nih_v2_control.json) y [`nih_v2_c.json`](../configs/nih_v2_c.json). Comando: `PYTHONPATH=src .venv/bin/python -m rx_torax.prepare --config <config>`.
@@ -58,7 +58,7 @@ Es el **único cambio** entre los dos. Los hiperparámetros son los del modelo A
 - **No es el test oficial.** Imita su mezcla de estudios previos, pero sus pacientes vienen de `train_val`. El F1 que salga no se compara directamente con el 0,744 de B.
 
 ## Entrenamiento y validación
-Los dos modelos eligieron la época 4. Desde la época 5 la pérdida de validación sube mientras la de train sigue bajando: es sobreajuste, y el early stopping lo cortó a tiempo.
+Los dos modelos eligieron la época 4. En C, desde la época 5 la pérdida de validación sube mientras la de train sigue bajando; en el control ya subía, con oscilaciones, desde la época 1. Es sobreajuste, y el early stopping lo cortó a tiempo.
 
 | Validación (732 imágenes) | Control | Modelo C | C − control (IC 95%) |
 |---|---|---|---|
@@ -88,7 +88,7 @@ La referencia trivial, siempre positivo, da F1 0,571.
 
 ### Contra la decisión tomada antes
 - **F1 ≥ 0,80: no se cumple.** C saca 0,784. El intervalo llega a 0,823, así que tampoco se puede descartar que el valor real sea 0,80 o más.
-- **C mejor que el control: no.** El intervalo de la diferencia de F1 incluye el 0.
+- **C mejor que el control: no se detectó.** El intervalo de la diferencia de F1 incluye el 0, así que no se rechaza H0 (diferencia nula) con α = 0,05. Eso no prueba que sean iguales (slides 04, p. 19).
 - **Lo que sí se confirmó:** la hipótesis predecía menos falsos positivos, y pasó. La especificidad y la precisión suben con intervalos enteros por encima de 0. Pero el recall baja un poco y el F1 casi no se mueve.
 
 ### Por estudios previos
@@ -100,7 +100,7 @@ Análisis descriptivo, hecho después de evaluar. No cambia ningún modelo.
 | 1 a 9 | 220 | 70,5% / 69,5% | 84,2% / 88,5% | 0,866 / 0,875 |
 | 10 o más | 279 | 79,6% / 76,7% | 83,7% / 88,8% | 0,878 / 0,886 |
 
-- C gana especificidad sobre todo en pacientes con estudios previos, que es donde cambió sus negativas de train.
+- C gana especificidad sobre todo en pacientes con estudios previos, que es donde cambió sus negativas de train. Son valores puntuales, sin intervalos por subgrupo: el grupo de 0 estudios previos tiene solo 26 positivas y no es concluyente.
 - **El test nuevo no reproduce el problema del test oficial.** En pacientes con 10 o más estudios previos, hasta el control tiene especificidad 83,7% y AUC 0,878. El modelo B, en el test oficial, tenía 35,0% y 0,779. Son modelos distintos, pero sugiere que la mezcla de estudios previos no explica sola la caída del test oficial: esos pacientes difieren en algo que los metadatos no muestran.
 
 ### Por qué no llega a 0,80
