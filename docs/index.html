@@ -6,6 +6,79 @@
   <title>Derrame pleural en radiografías</title>
   <meta name="description" content="DenseNet121 que detecta derrame pleural (Effusion) en radiografías de tórax PA de NIH ChestX-ray14. Trabajo final de Inteligencia Artificial, IUA 2026.">
   <link rel="stylesheet" href="assets/style.css">
+  <style>
+    /* Arquitectura y demo interactiva. Usan las variables de assets/style.css, así que siguen el modo oscuro. */
+    .arq { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem 2.5rem; align-items: start; margin-top: 1.5rem; }
+    .arq-diagrama { max-width: 460px; width: 100%; margin: 0 auto; }
+    @media (min-width: 820px) { .arq { grid-template-columns: minmax(0, 440px) minmax(0, 1fr); } }
+    .arq h3:first-child { margin-top: 0; }
+    svg.diagrama { width: 100%; height: auto; display: block; }
+    .diagrama .caja { fill: var(--card); stroke: var(--line); stroke-width: 1.2; }
+    .diagrama .caja-red { fill: var(--card); stroke: var(--accent); stroke-width: 2; }
+    .diagrama .caja-si { fill: var(--accent); stroke: var(--accent); }
+    .diagrama .t { fill: var(--text); font-size: 15.5px; font-weight: 700; }
+    .diagrama .d { fill: var(--text-muted); font-size: 13px; }
+    .diagrama .t-si { fill: var(--accent-text); font-size: 15.5px; font-weight: 700; }
+    .diagrama .d-si { fill: var(--accent-text); font-size: 13px; }
+    .diagrama .circ { fill: var(--bg-alt); stroke: var(--line); }
+    .diagrama .n { fill: var(--text); font-size: 11.5px; font-weight: 700; }
+    .diagrama .flecha { stroke: var(--text-muted); stroke-width: 1.5; fill: none; }
+    .diagrama .punta { fill: var(--text-muted); }
+
+    .nota { font-size: 0.92rem; border-left: 3px solid var(--accent); padding: 0.2rem 0 0.2rem 0.9rem; }
+    .demo-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; margin-top: 1.5rem; }
+    @media (min-width: 780px) { .demo-grid { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); } }
+    .panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 1rem; min-width: 0; }
+    .panel h3 { margin: 0 0 0.6rem; font-size: 1rem; }
+    .umbral-cabecera { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem; margin-bottom: 0.4rem; }
+    .umbral-cabecera label { font-weight: 600; }
+    .umbral-cabecera output { font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; margin-left: 0.4rem; color: var(--accent); }
+    button.btn { cursor: pointer; font-family: inherit; line-height: inherit; }
+    .btn-chico { padding: 0.35rem 0.85rem; font-size: 0.85rem; }
+    .leyenda { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; font-size: 0.8rem; color: var(--text-muted); margin: 0.2rem 0 0.6rem; }
+    .leyenda span::before { content: ""; display: inline-block; width: 0.75rem; height: 0.75rem; border-radius: 2px; margin-right: 0.35rem; vertical-align: -0.1rem; }
+    .leyenda .l-pos::before { background: var(--accent); }
+    .leyenda .l-neg::before { background: var(--text-muted); opacity: 0.55; }
+    .leyenda .l-zona::before { background: color-mix(in srgb, var(--accent) 16%, transparent); border: 1px solid var(--line); }
+    .leyenda .l-elegido::before { width: 0; height: 0.8rem; border-radius: 0; border-left: 2px dashed var(--text-muted); }
+    .hist-wrap { padding: 0 10px; }
+    svg.hist { display: block; width: 100%; height: 170px; touch-action: pan-y; cursor: pointer; }
+    .hist .barra-pos { fill: var(--accent); }
+    .hist .barra-neg { fill: var(--text-muted); opacity: 0.55; }
+    .hist .zona { fill: var(--accent); opacity: 0.12; }
+    .hist .eje { stroke: var(--line); stroke-width: 1; }
+    .hist .linea-umbral { stroke: var(--text); stroke-width: 2; }
+    .hist .linea-elegido { stroke: var(--text-muted); stroke-width: 1.5; stroke-dasharray: 5 4; }
+    .rango-wrap { position: relative; margin-top: 0.4rem; }
+    .rango { -webkit-appearance: none; appearance: none; display: block; width: 100%; height: 28px; margin: 0; background: transparent; cursor: pointer; }
+    .rango:focus { outline: none; }
+    .rango:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+    .rango::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: var(--line); }
+    .rango::-webkit-slider-thumb { -webkit-appearance: none; box-sizing: border-box; width: 20px; height: 20px; margin-top: -7px; border-radius: 50%; background: var(--accent); border: 3px solid var(--card); box-shadow: 0 0 0 1px var(--accent); }
+    .rango::-moz-range-track { height: 6px; border-radius: 3px; background: var(--line); }
+    .rango::-moz-range-thumb { box-sizing: border-box; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); border: 3px solid var(--card); box-shadow: 0 0 0 1px var(--accent); }
+    .escala { position: relative; height: 2.6rem; font-size: 0.75rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+    .escala span { position: absolute; top: 0.1rem; left: calc(10px + (100% - 20px) * var(--p)); transform: translateX(-50%); white-space: nowrap; }
+    .escala .marca-elegido { top: 1.15rem; color: var(--text); font-weight: 600; }
+    .escala .marca-elegido::before { content: "▲ "; color: var(--accent); }
+    .resumen { font-size: 0.9rem; margin: 0.2rem 0 0; }
+    table.mc { table-layout: fixed; border-collapse: separate; border-spacing: 6px; margin: -6px; width: calc(100% + 12px); font-size: 0.85rem; }
+    table.mc th { border: 0; padding: 0.2rem; text-align: center; vertical-align: bottom; font-size: 0.78rem; line-height: 1.3; }
+    table.mc th[scope="row"] { text-align: left; vertical-align: middle; width: 30%; }
+    table.mc td { border: 1px solid var(--line); border-radius: 8px; padding: 0.6rem 0.3rem; text-align: center; vertical-align: middle; line-height: 1.25; }
+    table.mc td strong { display: block; font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+    table.mc td span { display: block; font-size: 0.74rem; color: var(--text-muted); margin-top: 0.2rem; }
+    table.mc td.mc-bien { background: color-mix(in srgb, var(--good) 12%, var(--card)); }
+    table.mc td.mc-bien strong { color: var(--good); }
+    table.mc td.mc-mal { background: color-mix(in srgb, var(--bad) 12%, var(--card)); }
+    table.mc td.mc-mal strong { color: var(--bad); }
+    .mc-pie { font-size: 0.8rem; color: var(--text-muted); margin: 0.8rem 0 0; }
+    .stats.metricas { margin: 1rem 0 0.5rem; }
+    .stat-card .delta { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.35rem; font-variant-numeric: tabular-nums; }
+    .fuente { font-size: 0.8rem; }
+    .fuente code { overflow-wrap: anywhere; }
+    .nw { white-space: nowrap; }
+  </style>
 </head>
 <body>
 
@@ -15,7 +88,9 @@
       <ul>
         <li><a href="#problema">Problema</a></li>
         <li><a href="#como">Cómo funciona</a></li>
+        <li><a href="#arquitectura">Arquitectura</a></li>
         <li><a href="#demo">Demo</a></li>
+        <li><a href="#umbral">Demo interactiva</a></li>
         <li><a href="#resultados">Resultados</a></li>
         <li><a href="#autores">Autores</a></li>
       </ul>
@@ -29,6 +104,7 @@
       <p class="tagline">Una red DenseNet121 que recibe una radiografía PA y estima si tiene derrame pleural. Entrenada con NIH ChestX-ray14 y evaluada una sola vez sobre pacientes que nunca vio.</p>
       <div class="cta-row">
         <a class="btn btn-primary" href="https://github.com/Marcouzis11/iaproyecto">Ver repositorio</a>
+        <a class="btn btn-secondary" href="#umbral">Probar la demo interactiva</a>
         <a class="btn btn-secondary" href="https://github.com/Marcouzis11/iaproyecto#readme">Leer el README</a>
         <a class="btn btn-secondary" href="Informe_proceso_Effusion.pdf">Informe en PDF</a>
       </div>
@@ -60,12 +136,93 @@
       <ol class="steps">
         <li><strong>Datos.</strong> De 112.120 radiografías de NIH quedan 67.298 PA válidas, sin AP ni duplicados.</li>
         <li><strong>Separación por paciente.</strong> Test es la lista oficial de NIH; ningún paciente aparece en dos conjuntos.</li>
-        <li><strong>40% de positivas</strong> en train, validación y test, como pidió la cátedra.</li>
+        <li><strong>40% de positivas</strong> en train, validación y test, por pedido del profesor. En clase se balancea solo train (slides 06, pp. 29, 31 y 35); por eso precisión y F1 salen más altos que con la prevalencia real (9,8%).</li>
         <li><strong>Transformación.</strong> Grises, 224×224 sin deformar, normalizado con la media y el desvío de train.</li>
-        <li><strong>Modelo.</strong> DenseNet121 preentrenada en ImageNet, con una salida. Early stopping por AUC de validación.</li>
+        <li><strong>Modelo.</strong> DenseNet121 preentrenada en ImageNet, con una salida. Early stopping por AUC de validación (<a href="#arquitectura">ver arquitectura</a>).</li>
         <li><strong>Evaluación.</strong> Umbral elegido en validación; test una sola vez; intervalos bootstrap por paciente.</li>
       </ol>
-      <p>Se compararon tres formas de armar train: sacar negativas (A), repetir positivas (B) y elegir negativas como las del test (C). El modelo final es el B.</p>
+      <p>Se compararon tres formas de armar train: sacar negativas (A), repetir positivas (B) y elegir negativas como las del test (C). El modelo final es el B, elegido antes de abrir el test por tener el mayor AUC de validación. Entre A y B no se detectó una diferencia significativa (el intervalo de confianza de la diferencia incluye 0).</p>
+    </div>
+  </section>
+
+  <section id="arquitectura">
+    <div class="container">
+      <h2>Arquitectura</h2>
+      <p>Una radiografía entra por arriba y sale un puntaje. Todo el recorrido es el mismo en entrenamiento, validación, test y en <code>rx-predecir</code>.</p>
+      <div class="arq">
+        <div class="arq-diagrama">
+          <svg class="diagrama" viewBox="0 0 380 672" role="img" aria-labelledby="arq-titulo arq-desc">
+            <title id="arq-titulo">Recorrido de una radiografía por el modelo</title>
+            <desc id="arq-desc">Radiografía PA; escala de grises, 224 por 224 conservando la proporción con bordes negros e intensidades divididas por 255; z-score con media 0,511 y desvío 0,263 de train; DenseNet121 preentrenada en ImageNet con una sola salida; sigmoide que da un puntaje de 0 a 1; si el puntaje es mayor o igual a 0,414 la radiografía se marca como Effusion.</desc>
+
+            <rect class="caja" x="6" y="4" width="368" height="58" rx="10"/>
+            <circle class="circ" cx="28" cy="25" r="11"/><text class="n" x="28" y="29" text-anchor="middle">1</text>
+            <text class="t" x="50" y="28">Radiografía de tórax PA</text>
+            <text class="d" x="50" y="48">Vista posteroanterior; PNG, JPEG o TIFF</text>
+
+            <line class="flecha" x1="190" y1="62" x2="190" y2="79"/><polygon class="punta" points="184,78 196,78 190,86"/>
+
+            <rect class="caja" x="6" y="86" width="368" height="94" rx="10"/>
+            <circle class="circ" cx="28" cy="107" r="11"/><text class="n" x="28" y="111" text-anchor="middle">2</text>
+            <text class="t" x="50" y="110">Preprocesamiento</text>
+            <text class="d" x="50" y="130">Escala de grises y 224×224 sin deformar:</text>
+            <text class="d" x="50" y="148">se conserva la proporción con bordes negros</text>
+            <text class="d" x="50" y="166">Intensidades ÷ 255 → valores entre 0 y 1</text>
+
+            <line class="flecha" x1="190" y1="180" x2="190" y2="197"/><polygon class="punta" points="184,196 196,196 190,204"/>
+
+            <rect class="caja" x="6" y="204" width="368" height="76" rx="10"/>
+            <circle class="circ" cx="28" cy="225" r="11"/><text class="n" x="28" y="229" text-anchor="middle">3</text>
+            <text class="t" x="50" y="228">Normalización z-score</text>
+            <text class="d" x="50" y="248">x′ = (x − 0,511) ÷ 0,263</text>
+            <text class="d" x="50" y="266">Media y desvío solo del train del modelo B</text>
+
+            <line class="flecha" x1="190" y1="280" x2="190" y2="297"/><polygon class="punta" points="184,296 196,296 190,304"/>
+
+            <rect class="caja-red" x="6" y="304" width="368" height="94" rx="10"/>
+            <circle class="circ" cx="28" cy="325" r="11"/><text class="n" x="28" y="329" text-anchor="middle">4</text>
+            <text class="t" x="50" y="328">DenseNet121</text>
+            <text class="d" x="50" y="348">Red convolucional preentrenada en ImageNet</text>
+            <text class="d" x="50" y="366">El gris se copia en los 3 canales de entrada</text>
+            <text class="d" x="50" y="384">Última capa → 1 salida: el logit</text>
+
+            <line class="flecha" x1="190" y1="398" x2="190" y2="415"/><polygon class="punta" points="184,414 196,414 190,422"/>
+
+            <rect class="caja" x="6" y="422" width="368" height="76" rx="10"/>
+            <circle class="circ" cx="28" cy="443" r="11"/><text class="n" x="28" y="447" text-anchor="middle">5</text>
+            <text class="t" x="50" y="446">Sigmoide</text>
+            <text class="d" x="50" y="466">puntaje = 1 / (1 + e<tspan dy="-5" font-size="10">−logit</tspan><tspan dy="5">)</tspan></text>
+            <text class="d" x="50" y="484">Un número entre 0 y 1</text>
+
+            <line class="flecha" x1="190" y1="498" x2="190" y2="515"/><polygon class="punta" points="184,514 196,514 190,522"/>
+
+            <rect class="caja" x="6" y="522" width="368" height="58" rx="10"/>
+            <circle class="circ" cx="28" cy="543" r="11"/><text class="n" x="28" y="547" text-anchor="middle">6</text>
+            <text class="t" x="50" y="546">¿Puntaje ≥ 0,414?</text>
+            <text class="d" x="50" y="566">Umbral elegido en validación maximizando F1</text>
+
+            <path class="flecha" d="M190 580 V592 M96 592 H284 M96 592 V603 M284 592 V603"/>
+            <polygon class="punta" points="90,602 102,602 96,610"/>
+            <polygon class="punta" points="278,602 290,602 284,610"/>
+
+            <rect class="caja-si" x="6" y="610" width="180" height="58" rx="10"/>
+            <text class="t-si" x="96" y="634" text-anchor="middle">Sí: Effusion</text>
+            <text class="d-si" x="96" y="654" text-anchor="middle">puntaje ≥ 0,414</text>
+
+            <rect class="caja" x="194" y="610" width="180" height="58" rx="10"/>
+            <text class="t" x="284" y="634" text-anchor="middle">No: sin Effusion</text>
+            <text class="d" x="284" y="654" text-anchor="middle">puntaje &lt; 0,414</text>
+          </svg>
+        </div>
+        <div>
+          <h3>Por qué esta red</h3>
+          <p>DenseNet121 es la arquitectura de CheXNet, un trabajo de referencia sobre este mismo dataset. En sus bloques densos, cada capa recibe los mapas de características de todas las anteriores del bloque. Partir de los pesos de ImageNet (transferencia de aprendizaje) permite entrenar con unas 22.000 radiografías en lugar de millones. La red solo ve los píxeles: ni la edad, ni el sexo, ni los estudios previos.</p>
+          <p>La media (0,511) y el desvío (0,263) se calcularon una vez, solo con train, y se aplican iguales a validación, test e imágenes nuevas. Si cada conjunto usara los suyos, la red recibiría imágenes distintas de las que vio al entrenar.</p>
+
+          <h3>Cómo se entrenó</h3>
+          <p>El train del modelo B tiene 22.594 radiografías, 4.108 con derrame. Para llegar al <strong>40% de positivas</strong>, cada positiva se repite 3 veces por época (30.810 ejemplos), <strong>solo en train</strong>. También solo en train se aplica un <strong>aumento de datos leve</strong>: rotación ±7°, escala ±5% y desplazamiento ±5%, sin espejar. La pérdida es entropía cruzada binaria sobre el logit, con AdamW (lr 1e-4) y lotes de 32. <strong>Validación</strong> (1.813 radiografías) elige la época, con early stopping por AUC y paciencia 4 (la mejor fue la primera), y el <strong>umbral 0,414</strong> que maximiza el F1. El <strong>test se evaluó una sola vez</strong>, con todo ya fijado.</p>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -90,16 +247,84 @@ modelo_b_densenet121_v1 · umbral 0.414 (elegido en validación)
           </tbody>
         </table>
       </div>
-      <p>Las cuatro se eligieron al azar, una por cada celda de la matriz de confusión, para mostrar aciertos y errores. Con <code>--json</code> el resultado sale en JSON, listo para otra aplicación. Abajo, los cinco casos más seguros de cada celda en el test oficial:</p>
-      <div class="figure narrow"><img src="img/test_modelo_b_ejemplos.png" alt="Grilla de radiografías del test: verdaderos positivos, falsos negativos, falsos positivos y verdaderos negativos, con su puntaje"></div>
+      <p>Las cuatro se eligieron al azar, una por cada celda de la matriz de confusión, para mostrar aciertos y errores. Con <code>--json</code> el resultado sale en JSON, listo para otra aplicación. Abajo, los cinco casos más seguros de cada celda en la submuestra del test oficial:</p>
+      <div class="figure narrow"><img src="img/test_modelo_b_ejemplos.png" alt="Grilla de radiografías de la submuestra del test oficial: verdaderos positivos, falsos negativos, falsos positivos y verdaderos negativos, con su puntaje"></div>
       <p class="figure-caption">Varios falsos positivos con puntaje 0,98 muestran opacidades evidentes: las etiquetas de NIH salen de procesar informes, y tienen errores.</p>
+    </div>
+  </section>
+
+  <section id="umbral">
+    <div class="container">
+      <h2>Demo interactiva: mové el umbral</h2>
+      <p>El modelo no responde "sí" o "no": da un puntaje entre 0 y 1, y el umbral decide desde dónde se marca <em>Effusion</em>. Mové el control, o tocá el gráfico, y mirá cómo cambian los aciertos y los errores.</p>
+      <p class="nota">Son las 1.813 radiografías de <strong>validación</strong> del modelo B, con 40% de positivas: ahí se fijó el umbral 0,414 maximizando el F1, y el test no se usa para elegirlo. Al bajar el umbral sube el recall (se pierden menos derrames) y bajan la especificidad y la precisión (hay más falsas alarmas). En 0 todo se marca como derrame y el F1 cae a 0,571, la referencia sin IA.</p>
+
+      <div class="demo-grid">
+        <div class="panel">
+          <div class="umbral-cabecera">
+            <label for="umbral-rango">Umbral <output id="umbral-valor" for="umbral-rango">0,414</output></label>
+            <button type="button" class="btn btn-secondary btn-chico" id="umbral-volver">Volver a 0,414</button>
+          </div>
+          <div class="leyenda" aria-hidden="true">
+            <span class="l-pos">Con derrame (725)</span>
+            <span class="l-neg">Sin derrame (1.088)</span>
+            <span class="l-zona">Se marca Effusion</span>
+            <span class="l-elegido">Umbral elegido</span>
+          </div>
+          <div class="hist-wrap">
+            <svg class="hist" id="umbral-hist" viewBox="0 0 1000 200" preserveAspectRatio="none" role="img" aria-label="Histograma de puntajes de validación: las radiografías con derrame arriba del eje y las sin derrame abajo, con la línea del umbral."></svg>
+          </div>
+          <div class="rango-wrap">
+            <input class="rango" type="range" id="umbral-rango" min="0" max="1000" step="1" value="414" aria-valuetext="0,414">
+          </div>
+          <div class="escala" aria-hidden="true">
+            <span style="--p: 0">0</span>
+            <span style="--p: 0.25">0,25</span>
+            <span style="--p: 0.5">0,5</span>
+            <span style="--p: 0.75">0,75</span>
+            <span style="--p: 1">1</span>
+            <span class="marca-elegido" style="--p: 0.414">0,414</span>
+          </div>
+          <p class="resumen" id="umbral-resumen" aria-live="polite">Con 0,414 se marcan 825 de 1.813 radiografías: se pierden 105 de 725 derrames y hay 205 falsas alarmas.</p>
+        </div>
+
+        <div class="panel">
+          <h3>Matriz de confusión</h3>
+          <table class="mc">
+            <thead>
+              <tr><th></th><th scope="col">Predice<br>Effusion</th><th scope="col">Predice<br>sin Effusion</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Con derrame<br>(725)</th>
+                <td class="mc-bien"><strong id="mc-vp">620</strong><span>VP · detectados</span></td>
+                <td class="mc-mal"><strong id="mc-fn">105</strong><span>FN · derrames perdidos</span></td>
+              </tr>
+              <tr>
+                <th scope="row">Sin derrame<br>(1.088)</th>
+                <td class="mc-mal"><strong id="mc-fp">205</strong><span>FP · falsas alarmas</span></td>
+                <td class="mc-bien"><strong id="mc-vn">883</strong><span>VN · bien descartadas</span></td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="mc-pie">VP: verdaderos positivos · FN: falsos negativos · FP: falsos positivos · VN: verdaderos negativos.</p>
+        </div>
+      </div>
+
+      <div class="stats metricas">
+        <div class="stat-card"><div class="value" id="m-recall">85,5%</div><div class="label">Recall · <span class="nw">VP / (VP + FN)</span></div><div class="delta" id="d-recall">igual que con 0,414</div></div>
+        <div class="stat-card"><div class="value" id="m-esp">81,2%</div><div class="label">Especificidad · <span class="nw">VN / (VN + FP)</span></div><div class="delta" id="d-esp">igual que con 0,414</div></div>
+        <div class="stat-card"><div class="value" id="m-prec">75,2%</div><div class="label">Precisión · <span class="nw">VP / (VP + FP)</span></div><div class="delta" id="d-prec">igual que con 0,414</div></div>
+        <div class="stat-card"><div class="value" id="m-f1">0,800</div><div class="label">F1 · media armónica de precisión y recall</div><div class="delta" id="d-f1">igual que con 0,414</div></div>
+      </div>
+      <p class="fuente">Datos: <code>models/modelo_b_densenet121_v1/evaluacion_val/predicciones_val.csv</code>, con los puntajes redondeados a 4 decimales y embebidos en la página: todo se calcula en el navegador, sin servidor. En el test, con el mismo umbral, el F1 fue 0,744.</p>
     </div>
   </section>
 
   <section id="resultados">
     <div class="container">
       <h2>Resultados</h2>
-      <p>Modelo B en el test oficial de NIH: 4.390 radiografías de 1.686 pacientes, evaluadas una sola vez con el umbral elegido en validación.</p>
+      <p>Modelo B en una submuestra del test oficial de NIH (40% de positivas): 4.390 radiografías de 1.686 pacientes, evaluadas una sola vez con el umbral elegido en validación.</p>
 
       <div class="stats">
         <div class="stat-card"><div class="value">0,744</div><div class="label">F1 en test (IC 0,726 a 0,761)</div></div>
@@ -108,7 +333,7 @@ modelo_b_densenet121_v1 · umbral 0.414 (elegido en validación)
         <div class="stat-card"><div class="value">93%</div><div class="label">Recall · especificidad 62%</div></div>
       </div>
 
-      <div class="figure"><img src="img/test_modelo_b.png" alt="Curva ROC, matriz de confusión y distribución de puntajes del modelo B en el test oficial"></div>
+      <div class="figure"><img src="img/test_modelo_b.png" alt="Curva ROC, matriz de confusión y distribución de puntajes del modelo B en la submuestra del test oficial"></div>
 
       <h3>Todos los modelos</h3>
       <div class="table-wrap">
@@ -117,7 +342,7 @@ modelo_b_densenet121_v1 · umbral 0.414 (elegido en validación)
           <tbody>
             <tr><td>A · sacar negativas</td><td>Validación</td><td class="num">0,795 (0,769–0,821)</td><td class="num">0,898</td></tr>
             <tr><td>B · repetir positivas</td><td>Validación</td><td class="num">0,800 (0,773–0,825)</td><td class="num">0,905</td></tr>
-            <tr class="highlight"><td>B · modelo final</td><td>Test oficial</td><td class="num">0,744 (0,726–0,761)</td><td class="num">0,869</td></tr>
+            <tr class="highlight"><td>B · modelo final</td><td>Submuestra del test oficial (40% de positivas)</td><td class="num">0,744 (0,726–0,761)</td><td class="num">0,869</td></tr>
             <tr><td>Control</td><td>Test nuevo</td><td class="num">0,775 (0,729–0,814)</td><td class="num">0,895</td></tr>
             <tr><td>C · negativas como el test</td><td>Test nuevo</td><td class="num">0,784 (0,736–0,823)</td><td class="num">0,897</td></tr>
           </tbody>
@@ -128,7 +353,7 @@ modelo_b_densenet121_v1 · umbral 0.414 (elegido en validación)
       <ul>
         <li><strong>Supera claramente la referencia sin IA,</strong> pero no llega al 0,80 que la consigna da de ejemplo.</li>
         <li><strong>Validación fue optimista.</strong> El test oficial tiene muchos más pacientes con 10 o más estudios previos, y ahí el modelo confunde más: podría estar aprendiendo "paciente internado" además de "derrame".</li>
-        <li><strong>El modelo C bajó los falsos positivos</strong> de forma significativa, pero el F1 no mejoró: con AUC ~0,90, ningún umbral pasa de 0,80.</li>
+        <li><strong>El modelo C bajó los falsos positivos</strong> de forma significativa, pero en F1 no se detectó una diferencia significativa con el control (el intervalo de confianza de la diferencia incluye 0). Con AUC ~0,90, ningún umbral pasa de 0,80.</li>
         <li><strong>Con la proporción real</strong> (9,8% de derrames) el F1 sería 0,34: sirve, como mucho, para priorizar estudios.</li>
       </ul>
     </div>
@@ -148,6 +373,7 @@ modelo_b_densenet121_v1 · umbral 0.414 (elegido en validación)
         </div>
         <div class="author-card">
           <div class="name">Martin Mousist</div>
+          <a href="https://github.com/MartinMousist">GitHub</a>
         </div>
       </div>
     </div>
@@ -162,6 +388,124 @@ modelo_b_densenet121_v1 · umbral 0.414 (elegido en validación)
       </p>
     </div>
   </footer>
+
+  <!-- Predicciones de validación del modelo B (target y puntaje, 4 decimales) para la demo del umbral -->
+  <script type="application/json" id="datos-val">{"umbral":0.4139,"target":[0,1,1,0,0,0,0,1,0,0,0,1,1,1,1,1,1,0,1,1,0,0,1,1,1,0,1,1,0,0,0,0,0,1,0,0,0,0,0,1,1,0,0,0,0,1,1,1,0,0,1,1,0,0,1,0,0,0,1,1,0,0,0,0,0,1,1,1,1,0,0,0,1,1,1,1,0,0,0,0,1,1,0,0,1,1,0,0,0,1,0,0,1,0,0,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,0,0,0,1,0,0,1,1,0,0,1,0,1,1,1,0,1,0,1,0,0,1,0,0,0,0,0,1,0,0,1,1,1,1,1,0,1,1,1,1,0,0,0,1,1,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,1,0,1,1,0,1,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,0,1,1,0,0,0,1,1,0,0,0,0,0,0,0,1,1,0,1,1,1,1,1,0,1,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,1,1,1,1,1,1,0,1,0,1,0,0,0,1,0,1,1,1,0,1,0,0,0,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,0,1,0,0,1,1,1,1,0,0,0,0,1,1,1,0,1,1,0,1,1,0,0,0,0,0,0,0,0,0,1,0,0,1,1,1,0,1,1,0,1,1,0,0,0,0,0,1,0,0,1,1,0,0,0,0,1,0,1,1,1,1,1,0,1,0,0,1,0,1,1,1,1,1,1,1,0,0,0,1,1,1,0,0,1,0,0,0,1,0,1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,0,1,1,0,1,1,1,1,0,0,1,1,0,0,1,0,1,1,0,0,0,0,1,1,1,1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,0,1,1,1,1,0,0,0,0,0,1,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,1,1,0,1,0,0,0,1,0,0,1,1,1,1,1,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1,0,0,1,1,1,0,0,0,1,0,0,1,0,0,0,0,1,1,0,0,0,0,1,0,0,1,1,0,0,1,0,0,0,0,0,0,1,1,0,1,1,0,1,1,1,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,1,0,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,1,0,0,1,0,1,1,0,0,0,0,0,0,1,0,0,1,1,1,0,0,0,1,1,1,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,0,0,1,0,0,0,0,1,0,1,0,0,0,1,0,0,1,1,0,1,1,1,1,0,0,0,0,1,1,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,1,0,1,0,0,0,0,1,0,0,1,1,0,1,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,1,0,0,1,0,0,0,0,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,1,0,0,1,1,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,1,1,0,0,0,0,0,0,1,1,1,0,0,0,0,1,1,1,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,1,1,1,0,0,0,0,0,0,0,1,0,1,1,1,0,0,0,1,0,0,0,0,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,0,0,0,0,1,1,1,0,1,0,0,1,1,0,0,0,0,1,1,0,0,0,1,0,1,1,0,1,0,0,0,0,0,0,0,0,0,1,1,0,1,1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,1,1,1,0,0,1,1,0,0,1,1,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,1,1,0,0,1,0,0,1,0,0,1,1,1,1,1,0,0,1,1,0,0,0,0,1,1,1,1,0,1,1,0,0,0,0,0,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,0,0,1,1,0,0,1,1,0,0,0,0,1,0,1,1,1,1,1,0,1,1,0,1,1,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,1,0,0,0,0,0,1,1,0,0,0,1,0,1,0,1,0,1,1,1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,0,0,0,0,1,1,0,0,1,1,1,1,1,0,1,0,0,0,0,0,0,0,1,0,0,0,1,0,0,1,1,1,0,0,1,1,1,0,1,0,0,1,1,0,1,0,0,0,0,0,0,0,0,1,0,0,1,1,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1,0,0,0,1,0,1,0,0,0,0,0,1,0,0,0,0,1,1,1,0,1,0,1,1,0,0,0,0,0,1,1,0,1,1,0,0,0,0,0,1,1,0,1,0,1,1,1,1,1,1,0,1,1,1,1,0,1,0,0,1,1,1,0,1,0,1,1,0,1,1,1,0,0,1,0,0,1,0,1,0,0,0,0,1,0,1,1,1,0,0,0,1,1,1,0,0,1,0,1,0,0,0,0,0,1,0,1,1,0,1,1,0,0,0,1,1,0,0,0,0,1,0,0,0,0,0,0,1,0,1,0,1,0,1,1,1,1,0,0,1,1,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,1,0,0,0,0,0,0,1,0,1,1,1,0,0,1,0,0,1,0,0,0,1,1,1,1,1,1,0,0,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,1,0,0,0,0,1,1,0,0,0,0,0,0,0,1,1,0,0,1,0,0,1,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,1,1,0,1,0,1,0,0,0,0,1,0,1,0,0,1,0,0,1,1,1,1,0,1,1,1,1,1,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,1,1,0,0,0,0,0,1,1,1,1,0,0,0,1,0,1,1,1,0,1,1,0,0,0,1,1,1,1,1,0,1,1,1,0,0,1,0,0,1,0,0,0,0,0,1,0,0,1,0,0,1,0,0,1,1,1,1,1,0,1,1,0,0,0,1,1,0,0,1,0,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,0,0,0,1,1,1,0,1,0,0,0,0,0,0,1,1,1,1,1,0,0,1,0],"score":[0.0078,0.9739,0.9352,0.8623,0.1733,0.1225,0.0076,0.9367,0.1101,0.1034,0.0176,0.9042,0.9642,0.8037,0.5162,0.8814,0.8675,0.0342,0.6594,0.8711,0.042,0.0155,0.7783,0.9405,0.8585,0.0604,0.8914,0.5425,0.0168,0.1723,0.0113,0.5631,0.23,0.9073,0.3574,0.1012,0.0618,0.0485,0.0991,0.7919,0.9174,0.0228,0.0234,0.0691,0.0101,0.8549,0.9434,0.9052,0.0241,0.0479,0.8579,0.7547,0.2001,0.0287,0.8103,0.0685,0.4571,0.3205,0.7074,0.5921,0.0092,0.0909,0.1413,0.0775,0.743,0.0051,0.9727,0.9662,0.9685,0.0409,0.0354,0.0713,0.9353,0.7447,0.7467,0.7634,0.1722,0.3986,0.2066,0.0258,0.2233,0.3175,0.0699,0.2509,0.8039,0.9283,0.0523,0.1305,0.398,0.4894,0.0671,0.0304,0.818,0.0348,0.0301,0.8474,0.8267,0.9588,0.9805,0.9803,0.0983,0.0344,0.1964,0.2644,0.0423,0.8409,0.8789,0.9439,0.8743,0.3048,0.2113,0.5844,0.8461,0.9643,0.3876,0.6079,0.9657,0.9043,0.7512,0.2635,0.8581,0.0122,0.2167,0.3541,0.9115,0.1324,0.9146,0.1227,0.7998,0.1173,0.7461,0.0937,0.4275,0.1837,0.082,0.2336,0.272,0.8375,0.4217,0.0704,0.9253,0.8024,0.9553,0.7714,0.6884,0.0571,0.9767,0.9515,0.9645,0.9474,0.088,0.0186,0.2341,0.9021,0.0681,0.1036,0.918,0.09,0.9393,0.8731,0.025,0.2909,0.2231,0.3939,0.962,0.7945,0.0161,0.0275,0.0551,0.6594,0.7739,0.0123,0.9598,0.9757,0.0427,0.9208,0.8328,0.0125,0.9332,0.1767,0.0521,0.6929,0.878,0.0403,0.0192,0.8464,0.3032,0.051,0.0084,0.015,0.6504,0.1483,0.0299,0.0324,0.125,0.7786,0.1387,0.0077,0.1433,0.0057,0.0167,0.1392,0.1194,0.1328,0.8447,0.281,0.0395,0.3118,0.506,0.7789,0.9001,0.2112,0.1619,0.014,0.0153,0.0487,0.2986,0.1466,0.8674,0.6352,0.0169,0.9613,0.9718,0.9313,0.0822,0.1551,0.0409,0.8691,0.0896,0.0496,0.0797,0.0715,0.9238,0.8811,0.5568,0.3356,0.0877,0.5012,0.7052,0.1862,0.0951,0.5003,0.0064,0.8783,0.0733,0.0569,0.1482,0.2033,0.0661,0.6427,0.7846,0.046,0.0129,0.0057,0.0157,0.2211,0.1954,0.9789,0.9278,0.7951,0.8464,0.8335,0.8136,0.749,0.4576,0.8184,0.7441,0.7789,0.687,0.9749,0.102,0.2475,0.0295,0.8453,0.7112,0.0073,0.0606,0.0837,0.0272,0.0877,0.01,0.047,0.0044,0.395,0.9756,0.8709,0.9584,0.9802,0.9893,0.7826,0.8215,0.3293,0.2637,0.9801,0.9493,0.9502,0.8894,0.4347,0.7997,0.7587,0.9503,0.9493,0.851,0.8756,0.2087,0.006,0.9809,0.9821,0.9889,0.9694,0.0486,0.1697,0.0483,0.1111,0.0165,0.006,0.7575,0.8426,0.015,0.8332,0.0766,0.8652,0.8675,0.0051,0.0047,0.0153,0.0106,0.1493,0.0698,0.0447,0.1074,0.4559,0.9725,0.8674,0.4796,0.9008,0.8921,0.7097,0.6661,0.7138,0.737,0.1024,0.4336,0.8267,0.1769,0.0026,0.0381,0.0726,0.047,0.9178,0.0127,0.0083,0.8409,0.8196,0.5503,0.1761,0.0188,0.0786,0.2622,0.1852,0.9438,0.9236,0.9458,0.9497,0.9023,0.5854,0.4972,0.0438,0.8871,0.7744,0.3487,0.6831,0.818,0.9443,0.8671,0.9505,0.7481,0.9023,0.8376,0.0432,0.0565,0.9513,0.8948,0.8335,0.0408,0.5111,0.778,0.1754,0.0255,0.0323,0.1927,0.3455,0.9681,0.0234,0.874,0.0654,0.625,0.0371,0.0419,0.9294,0.5658,0.8733,0.6386,0.3126,0.6758,0.0108,0.1357,0.1355,0.2637,0.0968,0.0029,0.0123,0.8478,0.9105,0.0777,0.15,0.9483,0.6133,0.9557,0.0351,0.0891,0.8561,0.8902,0.0559,0.369,0.8848,0.0577,0.9673,0.9467,0.0087,0.0049,0.1846,0.1106,0.4077,0.816,0.5828,0.9569,0.3101,0.008,0.0279,0.598,0.4757,0.809,0.04,0.7731,0.9506,0.8865,0.6118,0.8424,0.9375,0.4917,0.0556,0.9795,0.1516,0.9621,0.1468,0.9602,0.9535,0.9438,0.9533,0.1289,0.9337,0.934,0.7947,0.919,0.0294,0.0668,0.4697,0.0364,0.4828,0.944,0.843,0.6286,0.2333,0.0333,0.5615,0.8959,0.93,0.9353,0.0569,0.0993,0.7456,0.6199,0.4741,0.1983,0.0467,0.9832,0.8582,0.0782,0.8674,0.0088,0.0178,0.4771,0.9796,0.5871,0.8296,0.9702,0.9714,0.3446,0.8364,0.9297,0.8584,0.0141,0.0021,0.2765,0.684,0.1933,0.0145,0.0253,0.0197,0.0296,0.0341,0.4965,0.047,0.8006,0.2094,0.1364,0.0343,0.8258,0.8354,0.0245,0.0372,0.1418,0.9407,0.0091,0.0621,0.9815,0.9863,0.1098,0.0109,0.0067,0.2331,0.228,0.1059,0.7938,0.3542,0.1325,0.0056,0.1705,0.345,0.4822,0.7293,0.9177,0.0257,0.0079,0.5618,0.7566,0.052,0.5066,0.2715,0.8345,0.0089,0.3986,0.6259,0.0448,0.0201,0.1088,0.0471,0.0756,0.2684,0.7223,0.1797,0.2106,0.9246,0.8768,0.6045,0.7984,0.5795,0.0535,0.2788,0.8827,0.8598,0.8063,0.7176,0.4725,0.1895,0.0928,0.0887,0.0204,0.0858,0.3946,0.6909,0.6209,0.2991,0.0136,0.4869,0.0387,0.3305,0.9133,0.9405,0.0225,0.0692,0.1761,0.0343,0.3119,0.1537,0.0086,0.0922,0.1059,0.0198,0.0343,0.5709,0.2218,0.2957,0.1861,0.0704,0.1402,0.0057,0.443,0.0202,0.1626,0.1837,0.282,0.0584,0.0344,0.9836,0.9752,0.9429,0.0097,0.0699,0.1584,0.0757,0.3378,0.0352,0.9532,0.0229,0.0146,0.0135,0.0873,0.2337,0.0309,0.0623,0.048,0.0445,0.1433,0.9472,0.6702,0.1337,0.743,0.1154,0.9558,0.9428,0.0078,0.0485,0.0209,0.2032,0.1862,0.1824,0.1936,0.7766,0.9587,0.9614,0.9798,0.9898,0.9905,0.9718,0.9798,0.9792,0.1197,0.7132,0.08,0.3673,0.4609,0.241,0.9689,0.872,0.0371,0.0185,0.6849,0.0055,0.4879,0.582,0.7235,0.0504,0.0105,0.0129,0.9877,0.8486,0.0838,0.0563,0.2031,0.2334,0.6403,0.252,0.0057,0.0384,0.9202,0.5021,0.0936,0.3827,0.1437,0.5035,0.035,0.0429,0.007,0.0125,0.7578,0.0824,0.422,0.9654,0.0176,0.9868,0.9773,0.2186,0.5134,0.8441,0.1923,0.0481,0.1309,0.6081,0.6133,0.7903,0.1858,0.3207,0.2858,0.4232,0.8889,0.0297,0.9416,0.9439,0.9457,0.9297,0.9421,0.7818,0.9129,0.8681,0.1195,0.0099,0.0863,0.5065,0.9698,0.9226,0.0424,0.0447,0.985,0.9577,0.1556,0.128,0.6324,0.2244,0.3379,0.0504,0.0228,0.2254,0.9018,0.578,0.2403,0.1632,0.4625,0.0299,0.1629,0.6104,0.1376,0.8089,0.0081,0.0224,0.0649,0.1731,0.023,0.0665,0.0696,0.0107,0.9673,0.857,0.658,0.8216,0.0829,0.0751,0.2726,0.2324,0.0903,0.0084,0.8778,0.9673,0.0027,0.7001,0.4137,0.0474,0.0803,0.9833,0.9835,0.1023,0.0451,0.8506,0.0889,0.0421,0.1389,0.0678,0.9016,0.936,0.9649,0.1684,0.9354,0.8716,0.9289,0.0313,0.0388,0.2133,0.0073,0.0175,0.0882,0.0292,0.2167,0.6985,0.9115,0.8017,0.2575,0.1068,0.0257,0.0121,0.1146,0.1126,0.1144,0.0949,0.3688,0.0595,0.0122,0.8947,0.3604,0.3694,0.4003,0.0517,0.6818,0.0048,0.0191,0.0355,0.0228,0.4006,0.1291,0.8206,0.0689,0.0371,0.0503,0.1102,0.8209,0.1287,0.236,0.9399,0.5917,0.4419,0.6922,0.1357,0.382,0.1637,0.009,0.9729,0.4236,0.1556,0.033,0.0526,0.7461,0.9774,0.9579,0.9574,0.2371,0.9715,0.0728,0.3764,0.1867,0.09,0.6086,0.04,0.0501,0.0558,0.0855,0.0237,0.6308,0.6663,0.461,0.0307,0.052,0.6683,0.1661,0.0187,0.0054,0.103,0.9672,0.3143,0.0148,0.0372,0.0973,0.2779,0.0905,0.2739,0.032,0.1076,0.0636,0.0787,0.0145,0.2631,0.7926,0.772,0.5031,0.7075,0.0274,0.3504,0.0065,0.203,0.0108,0.4501,0.1118,0.9851,0.9629,0.9712,0.038,0.0271,0.0088,0.1432,0.1004,0.0158,0.7995,0.7214,0.2036,0.9125,0.9306,0.9164,0.0237,0.3496,0.1412,0.6947,0.4241,0.0743,0.0262,0.069,0.5231,0.158,0.5514,0.201,0.9219,0.9628,0.975,0.9718,0.9581,0.9544,0.9512,0.9794,0.781,0.9537,0.9407,0.0652,0.9749,0.9673,0.9712,0.9608,0.9615,0.9226,0.6497,0.4228,0.9061,0.9705,0.9679,0.0754,0.0272,0.7151,0.0143,0.9856,0.9505,0.0452,0.1993,0.5563,0.0231,0.0018,0.4228,0.0948,0.1417,0.0736,0.0377,0.0972,0.4888,0.8372,0.6866,0.2677,0.0205,0.3536,0.0317,0.752,0.7535,0.6584,0.7999,0.0748,0.0131,0.0622,0.1223,0.2978,0.0106,0.1515,0.0381,0.0025,0.4646,0.6001,0.7233,0.8756,0.9593,0.2803,0.1231,0.0096,0.7141,0.6875,0.0653,0.0546,0.0072,0.328,0.0025,0.6699,0.0887,0.1003,0.03,0.0056,0.0349,0.1356,0.2053,0.1859,0.0651,0.4977,0.0308,0.0128,0.0023,0.0131,0.3539,0.0441,0.0114,0.0189,0.3831,0.0148,0.0089,0.0132,0.1157,0.0028,0.1014,0.0258,0.0019,0.0189,0.0651,0.1302,0.1396,0.0666,0.0043,0.006,0.0508,0.021,0.0283,0.0271,0.0202,0.1563,0.0197,0.2567,0.0519,0.0896,0.9643,0.9829,0.9587,0.9072,0.7156,0.0357,0.4292,0.7559,0.4113,0.1777,0.9532,0.9171,0.9452,0.0685,0.0954,0.2206,0.0321,0.0771,0.0061,0.9669,0.088,0.0625,0.0609,0.2485,0.1599,0.0088,0.1479,0.7711,0.0368,0.8428,0.574,0.8442,0.1376,0.3034,0.5601,0.8844,0.8562,0.9011,0.0239,0.0463,0.9674,0.9318,0.9432,0.9498,0.9083,0.6477,0.8115,0.8819,0.8363,0.8872,0.4714,0.344,0.039,0.751,0.7754,0.775,0.7311,0.8557,0.0514,0.9073,0.3992,0.7515,0.0412,0.0344,0.011,0.8727,0.8476,0.0245,0.2311,0.4346,0.0305,0.0083,0.0807,0.7207,0.6126,0.0432,0.0575,0.0353,0.2046,0.0223,0.0919,0.1097,0.9415,0.2785,0.0108,0.0183,0.1734,0.9611,0.0385,0.0218,0.0408,0.7757,0.9863,0.1252,0.8321,0.0033,0.0115,0.0515,0.0515,0.0194,0.6264,0.2465,0.011,0.0678,0.0989,0.0955,0.8729,0.2493,0.8473,0.7621,0.5609,0.0471,0.0465,0.0138,0.672,0.9108,0.0179,0.1664,0.8909,0.894,0.1945,0.074,0.1241,0.2358,0.9414,0.0782,0.9112,0.9425,0.9783,0.7769,0.4116,0.6466,0.6614,0.0722,0.5849,0.8698,0.1751,0.5052,0.1239,0.5526,0.1318,0.0738,0.4103,0.0108,0.5947,0.122,0.2986,0.018,0.0572,0.0093,0.0299,0.1438,0.0125,0.1124,0.0414,0.9255,0.0713,0.0795,0.0701,0.0282,0.9478,0.0276,0.162,0.3962,0.2785,0.1235,0.0282,0.0514,0.9288,0.9765,0.113,0.057,0.2835,0.975,0.4363,0.3175,0.2936,0.8906,0.119,0.9218,0.8818,0.7934,0.1708,0.0038,0.0278,0.1104,0.0824,0.7507,0.122,0.699,0.8672,0.7845,0.0075,0.3268,0.009,0.015,0.3188,0.0232,0.91,0.0547,0.1859,0.7948,0.4709,0.807,0.8967,0.8833,0.7412,0.8637,0.9547,0.9436,0.9378,0.9556,0.7761,0.301,0.3527,0.7593,0.1468,0.0554,0.1693,0.0227,0.8187,0.5349,0.0255,0.7871,0.9146,0.9818,0.984,0.8139,0.2056,0.0485,0.9532,0.9266,0.1079,0.0965,0.8926,0.0847,0.0256,0.0268,0.978,0.0695,0.1185,0.1156,0.928,0.0258,0.7456,0.6399,0.8507,0.7901,0.8887,0.8768,0.9522,0.6087,0.7866,0.0845,0.8941,0.0275,0.0892,0.9609,0.9475,0.4292,0.1986,0.4217,0.0168,0.0235,0.269,0.1056,0.1739,0.693,0.4136,0.5796,0.5106,0.4468,0.5486,0.5371,0.7069,0.0373,0.0188,0.0085,0.3013,0.0535,0.8796,0.0479,0.0847,0.7782,0.5546,0.6134,0.0911,0.0215,0.0102,0.0064,0.2974,0.1796,0.0314,0.0502,0.0074,0.0794,0.0208,0.0578,0.0097,0.7905,0.071,0.0652,0.7992,0.9061,0.0938,0.0307,0.1736,0.128,0.0256,0.0144,0.05,0.42,0.0362,0.0583,0.0246,0.0266,0.669,0.8577,0.8251,0.8482,0.2412,0.0386,0.9547,0.9163,0.0315,0.1854,0.139,0.3277,0.2932,0.309,0.3276,0.8192,0.859,0.7522,0.8145,0.8006,0.0629,0.0288,0.2278,0.6073,0.6461,0.0059,0.8157,0.9566,0.9634,0.9169,0.9085,0.901,0.8314,0.8893,0.0433,0.8312,0.6705,0.8145,0.8113,0.1314,0.1437,0.0458,0.1706,0.9411,0.9796,0.9575,0.0658,0.6752,0.0145,0.3186,0.8327,0.0811,0.9189,0.9642,0.9244,0.0334,0.2507,0.7246,0.2742,0.1198,0.876,0.6061,0.8754,0.0049,0.7026,0.749,0.3652,0.9268,0.0388,0.7981,0.9512,0.9622,0.0652,0.0612,0.1383,0.9094,0.9232,0.927,0.6156,0.1308,0.9498,0.2087,0.8211,0.771,0.1387,0.0251,0.086,0.1052,0.3127,0.0469,0.9627,0.0147,0.343,0.9428,0.7436,0.3116,0.1636,0.0083,0.8267,0.6603,0.014,0.0036,0.3397,0.879,0.8885,0.92,0.0763,0.0157,0.0306,0.2337,0.9464,0.8853,0.1963,0.277,0.6312,0.7715,0.473,0.4707,0.8299,0.8385,0.8474,0.0152,0.0983,0.7869,0.416,0.025,0.1359,0.1925,0.9185,0.9467,0.97,0.395,0.0946,0.1589,0.0885,0.0585,0.2757,0.7099,0.3149,0.124,0.3808,0.8595,0.9186,0.6229,0.29,0.0732,0.7036,0.7021,0.0065,0.0119,0.0122,0.5728,0.0101,0.7964,0.8648,0.9326,0.9186,0.7481,0.214,0.0223,0.9582,0.1205,0.2357,0.4507,0.0288,0.0262,0.7107,0.7534,0.8421,0.9555,0.9711,0.824,0.9592,0.1333,0.0216,0.9447,0.0347,0.9687,0.2579,0.9684,0.8526,0.9696,0.9306,0.9566,0.9343,0.7752,0.824,0.957,0.9541,0.9498,0.8058,0.8444,0.8636,0.8028,0.8275,0.9072,0.075,0.9445,0.0877,0.4139,0.955,0.8585,0.926,0.9395,0.9411,0.3036,0.2627,0.1264,0.1138,0.072,0.0433,0.019,0.0094,0.9642,0.0967,0.027,0.2845,0.3605,0.5905,0.4724,0.0164,0.0166,0.0445,0.1711,0.0725,0.0042,0.2695,0.8243,0.4226,0.0502,0.0732,0.9592,0.2554,0.5184,0.3392,0.2235,0.7206,0.2952,0.7232,0.0525,0.0856,0.2788,0.0275,0.9487,0.8357,0.0007,0.0466,0.0072,0.0462,0.0116,0.9626,0.1244,0.0399,0.0069,0.0267,0.5916,0.8362,0.4016,0.8321,0.0119,0.0123,0.5216,0.0596,0.0163,0.0092,0.9463,0.8091,0.0378,0.2832,0.472,0.0189,0.1098,0.071,0.0115,0.0538,0.4712,0.756,0.9322,0.7018,0.8053,0.7437,0.729,0.0017,0.0015,0.0377,0.2512,0.02,0.0698,0.3114,0.2162,0.0998,0.8964,0.801,0.0044,0.9149,0.9745,0.9778,0.9679,0.8071,0.974,0.2463,0.8563,0.8393,0.8437,0.0607,0.785,0.0105,0.0051,0.0165,0.3313,0.4486,0.1018,0.0116,0.1536,0.0734,0.2138,0.0815,0.1011,0.1256,0.0343,0.0246,0.0097,0.2536,0.0812,0.4726,0.3946,0.1538,0.9038,0.6179,0.9341,0.9375,0.9767,0.961,0.0589,0.7583,0.94,0.615,0.0384,0.0237,0.008,0.1287,0.1088,0.981,0.9575,0.9695,0.2389,0.0457,0.1314,0.2702,0.2151,0.9088,0.9524,0.9433,0.9496,0.7898,0.9407,0.9329,0.7111,0.6682,0.0906,0.948,0.9835,0.9847,0.9825,0.9842,0.4854,0.0419,0.8811,0.9766,0.7429,0.0105,0.8136,0.0092,0.6485,0.923,0.0379,0.2804,0.1185,0.0088,0.0266,0.2027,0.0279,0.0587,0.9385,0.0492,0.041,0.6172,0.0376,0.0177,0.9484,0.9602,0.772,0.6573,0.6713,0.8944,0.7864,0.9644,0.1532,0.0873,0.1581,0.9511,0.8574,0.002,0.0089,0.2198,0.1381,0.9657,0.9552,0.9312,0.9602,0.9685,0.9731,0.9038,0.9266,0.9348,0.8054,0.6965,0.8168,0.0183,0.8425,0.9766,0.964,0.9662,0.9484,0.8509,0.1226,0.4799,0.3259,0.2074,0.1793,0.9784,0.9599,0.0947,0.9248,0.0187,0.5739,0.381,0.0166,0.0387,0.1402,0.3204,0.1628,0.8719,0.5052,0.8889,0.6838,0.7191,0.393,0.6006]}</script>
+  <script>
+    (function () {
+      'use strict';
+      var datos = JSON.parse(document.getElementById('datos-val').textContent);
+      var y = datos.target, s = datos.score, n = s.length;
+      // El control va en milésimas. En la posición 414 se usa el umbral guardado en el modelo
+      // (0,413918), redondeado a 4 decimales como los puntajes: 0,4139. Se muestra como 0,414.
+      var ELEGIDO = 414, UMBRAL_ELEGIDO = datos.umbral;
+      var rango = document.getElementById('umbral-rango');
+      var svg = document.getElementById('umbral-hist');
+      var NS = 'http://www.w3.org/2000/svg';
+      var $ = function (id) { return document.getElementById(id); };
+
+      function umbralDe(k) { return k === ELEGIDO ? UMBRAL_ELEGIDO : k / 1000; }
+      function dec(x, d) { return x.toFixed(d).replace('.', ','); }
+      function pct(x) { return isNaN(x) ? '—' : dec(x * 100, 1) + '%'; }
+      function miles(v) { return String(v).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+
+      function calcular(t) {
+        var vp = 0, fn = 0, fp = 0, vn = 0;
+        for (var i = 0; i < n; i++) {
+          if (s[i] >= t) { if (y[i] === 1) vp++; else fp++; }
+          else { if (y[i] === 1) fn++; else vn++; }
+        }
+        return {
+          vp: vp, fn: fn, fp: fp, vn: vn,
+          recall: vp / (vp + fn),
+          esp: vn / (vn + fp),
+          prec: vp + fp > 0 ? vp / (vp + fp) : NaN,
+          f1: vp > 0 ? 2 * vp / (2 * vp + fp + fn) : 0
+        };
+      }
+      var ref = calcular(UMBRAL_ELEGIDO);
+
+      // Histograma: 40 intervalos de 0,025; con derrame hacia arriba, sin derrame hacia abajo.
+      var BINS = 40, pos = [], neg = [], i;
+      for (i = 0; i < BINS; i++) { pos.push(0); neg.push(0); }
+      for (i = 0; i < n; i++) {
+        var b = Math.min(BINS - 1, Math.floor(s[i] * BINS));
+        if (y[i] === 1) pos[b]++; else neg[b]++;
+      }
+      var maxPos = Math.max.apply(null, pos), maxNeg = Math.max.apply(null, neg);
+      var ALTO = 200, MARGEN = 4, escalaY = (ALTO - 2 * MARGEN) / (maxPos + maxNeg);
+      var eje = MARGEN + maxPos * escalaY, ancho = 1000 / BINS;
+
+      function nodo(tag, attrs) {
+        var el = document.createElementNS(NS, tag);
+        for (var a in attrs) el.setAttribute(a, attrs[a]);
+        svg.appendChild(el);
+        return el;
+      }
+      var zona = nodo('rect', { 'class': 'zona', y: 0, height: ALTO });
+      for (i = 0; i < BINS; i++) {
+        var hp = pos[i] * escalaY, hn = neg[i] * escalaY;
+        if (pos[i]) nodo('rect', { 'class': 'barra-pos', x: i * ancho + 2, width: ancho - 4, y: eje - hp, height: hp });
+        if (neg[i]) nodo('rect', { 'class': 'barra-neg', x: i * ancho + 2, width: ancho - 4, y: eje, height: hn });
+      }
+      nodo('line', { 'class': 'eje', x1: 0, x2: 1000, y1: eje, y2: eje, 'vector-effect': 'non-scaling-stroke' });
+      nodo('line', { 'class': 'linea-elegido', x1: ELEGIDO, x2: ELEGIDO, y1: 0, y2: ALTO, 'vector-effect': 'non-scaling-stroke' });
+      var linea = nodo('line', { 'class': 'linea-umbral', y1: 0, y2: ALTO, 'vector-effect': 'non-scaling-stroke' });
+
+      function delta(actual, base, esPct) {
+        if (isNaN(actual) || isNaN(base)) return '';
+        var d = esPct ? (actual - base) * 100 : actual - base;
+        var txt = esPct ? dec(Math.abs(d), 1) + ' puntos' : dec(Math.abs(d), 3);
+        if (txt === '0,0 puntos' || txt === '0,000') return 'igual que con 0,414';
+        return (d > 0 ? '▲ +' : '▼ −') + txt + ' respecto de 0,414';
+      }
+
+      function actualizar() {
+        var k = parseInt(rango.value, 10), t = umbralDe(k), m = calcular(t), txt = dec(k / 1000, 3);
+        $('umbral-valor').textContent = txt;
+        rango.setAttribute('aria-valuetext', txt);
+        zona.setAttribute('x', k);
+        zona.setAttribute('width', 1000 - k);
+        linea.setAttribute('x1', k);
+        linea.setAttribute('x2', k);
+        $('mc-vp').textContent = miles(m.vp);
+        $('mc-fn').textContent = miles(m.fn);
+        $('mc-fp').textContent = miles(m.fp);
+        $('mc-vn').textContent = miles(m.vn);
+        $('m-recall').textContent = pct(m.recall);
+        $('m-esp').textContent = pct(m.esp);
+        $('m-prec').textContent = pct(m.prec);
+        $('m-f1').textContent = dec(m.f1, 3);
+        $('d-recall').textContent = delta(m.recall, ref.recall, true);
+        $('d-esp').textContent = delta(m.esp, ref.esp, true);
+        $('d-prec').textContent = delta(m.prec, ref.prec, true);
+        $('d-f1').textContent = delta(m.f1, ref.f1, false);
+        $('umbral-resumen').textContent = 'Con ' + txt + ' se marcan ' + miles(m.vp + m.fp) + ' de ' + miles(n) +
+          ' radiografías: se pierden ' + miles(m.fn) + ' de ' + miles(m.vp + m.fn) + ' derrames y hay ' +
+          miles(m.fp) + ' falsas alarmas.';
+      }
+
+      function desdePuntero(ev) {
+        var r = svg.getBoundingClientRect();
+        var k = Math.round((ev.clientX - r.left) / r.width * 1000);
+        rango.value = Math.max(0, Math.min(1000, k));
+        actualizar();
+      }
+      var arrastrando = false;
+      svg.addEventListener('pointerdown', function (ev) {
+        arrastrando = true;
+        if (svg.setPointerCapture) svg.setPointerCapture(ev.pointerId);
+        desdePuntero(ev);
+      });
+      svg.addEventListener('pointermove', function (ev) { if (arrastrando) desdePuntero(ev); });
+      svg.addEventListener('pointerup', function () { arrastrando = false; });
+      svg.addEventListener('pointercancel', function () { arrastrando = false; });
+
+      rango.addEventListener('input', actualizar);
+      $('umbral-volver').addEventListener('click', function () { rango.value = ELEGIDO; actualizar(); rango.focus(); });
+      actualizar();
+    })();
+  </script>
 
 </body>
 </html>
