@@ -126,7 +126,7 @@ Es un prototipo académico: no diagnostica, y con la proporción real de derrame
 - [NumPy](https://numpy.org/): arrays de imágenes, métricas y bootstrap
 - [Pillow](https://python-pillow.org/): lectura y redimensionado de imágenes
 - [matplotlib](https://matplotlib.org/): gráficos de evaluación
-- [Jupyter](https://jupyter.org/): notebooks de preparación y pruebas
+- [Jupyter](https://jupyter.org/): notebooks de análisis exploratorio, preparación y pruebas
 
 ---
 
@@ -177,6 +177,7 @@ flowchart LR
 
 ### Análisis exploratorio
 
+- **Pacientes:** el 84% de las radiografías es de pacientes con más de un estudio, y las de una misma persona se parecen. Por eso se separa por paciente.
 - **Desbalance:** solo el 9,8% de las PA tiene Effusion (15,8% en el test oficial). La consigna pidió 40% de positivos en cada conjunto.
 - **Vistas:** 44.810 radiografías son AP. Suelen ser placas portátiles de pacientes en cama, así que se excluyeron para no mezclar dos poblaciones.
 - **Primer intento descartado:** con *Pneumothorax* había 3,6% de positivos en train y 13,9% en test, demasiado pocos. Se cambió a *Effusion* ([resumen](docs/SPLITS_NIH_PNEUMOTHORAX.md)).
@@ -184,7 +185,7 @@ flowchart LR
 - **Edad y sexo:** parecidos entre positivas y negativas (edad media 51 contra 47 años en train; 54–55% hombres en los dos grupos).
 - **Dispositivos:** en una muestra revisada a ojo, se ven cables o catéteres en ~30% de las positivas y ~13% de las negativas.
 
-El detalle, con figuras, está en [train, validación y test](docs/SPLITS_NIH_EFFUSION.md).
+Todo este análisis, con sus tablas y gráficos y la decisión que sale de cada uno, está en el notebook [`00_eda_nih_effusion.ipynb`](notebooks/00_eda_nih_effusion.ipynb), que se ve con sus resultados directamente en GitHub. El detalle de los conjuntos está en [train, validación y test](docs/SPLITS_NIH_EFFUSION.md).
 
 ### Preprocesamiento
 
@@ -280,7 +281,7 @@ El análisis completo está en [resultados de A y B](docs/RESULTADOS_MODELOS.md)
 │   ├── inference/              # rx-predecir
 │   ├── prepare.py              # rx-preparar
 │   └── demo.py                 # Datos sintéticos para probar el flujo
-├── notebooks/                  # Preparación y pruebas en notebooks
+├── notebooks/                  # EDA de NIH, preparación y pruebas en notebooks
 ├── tests/                      # Pruebas automáticas (unittest)
 ├── scripts/                    # flujo_completo.sh y preparar.ps1
 ├── examples/                   # 4 radiografías de ejemplo y carga de arrays
@@ -387,10 +388,13 @@ Cada comando guarda un `report.json` con la configuración, las versiones de las
 
 ```bash
 python -m pip install -e ".[notebooks]"
-python -m notebook notebooks/01_preparacion_radiografias.ipynb
+python -m notebook notebooks/00_eda_nih_effusion.ipynb
 ```
 
-`01_preparacion_radiografias.ipynb` hace la preparación y el EDA visual en celdas, y `02_pruebas_pipeline.ipynb` prueba esas funciones. Ver [notebooks](notebooks/README.md).
+- `00_eda_nih_effusion.ipynb`: el análisis exploratorio de NIH, con cada decisión sobre los datos y el gráfico o número que la justifica. Está guardado con sus resultados; para volver a ejecutarlo hacen falta NIH y los datos preparados con `configs/nih.json`.
+- `01_preparacion_radiografias.ipynb` hace la preparación en celdas, y `02_pruebas_pipeline.ipynb` prueba esas funciones. Arrancan en modo demo, sin el dataset.
+
+Ver [notebooks](notebooks/README.md).
 
 ---
 
