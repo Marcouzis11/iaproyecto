@@ -33,15 +33,15 @@ No se fijan de antemano cinco patologías, una red concreta ni una cifra de rend
 
 | Material local | Concepto útil | Aplicación al proyecto |
 |---|---|---|
-| 01 — Fundamentos IA/ML, pp. 31, 47, 65–98 | Supervisado, modelos de clasificación y herramientas | Definir imagen/etiqueta; preparar Python y considerar KNN, SVM o árboles |
-| 02 — Introducción al análisis, pp. 14–15 | Problema → datos → EDA → preparación → entrenamiento | Orden general del trabajo; ejemplo de un sistema visual |
-| 03 — EDA, pp. 19–23, 53–64 | Resúmenes numéricos, frecuencias, gráficos y contingencias | Describir imágenes, etiquetas, desbalance y coexistencia de hallazgos |
-| 04 — Faltantes, pp. 48–57 | Outliers y causas de faltantes | Diferenciar errores, casos raros, etiquetas ausentes e incertidumbre |
-| 05 — Limpieza, pp. 6–14, 17–24, 37–38 | Desbalance, particiones, limpieza y codificación | Preparar metadatos y la variable objetivo |
-| 06 — Nuevas features, pp. 5, 8–12, 19–31, 51 | Fuga, features, escalado, balance y preparación de imágenes | Construir un pipeline que aprenda transformaciones solo de train |
-| 08 — Optimización, pp. 24–26 | Gradiente y tasa de aprendizaje | Explicar el ajuste si el modelo elegido utiliza optimización por gradiente |
-| 09 — Aprendizaje automático, pp. 16–23, 24–47 | Generalización, sesgo/varianza, validación e hiperparámetros | Comparar candidatos y separar selección de evaluación final |
-| EXTRA — Computer Vision I, pp. 24–29, 34–42, 44–75 | Matrices, canales, lectura, grises, umbralización y filtros | Inspeccionar las radiografías y experimentar con su representación |
+| 01 · Fundamentos IA/ML, pp. 31, 47, 65–98 | Supervisado, modelos de clasificación y herramientas | Definir imagen/etiqueta; preparar Python y considerar KNN, SVM o árboles |
+| 02 · Introducción al análisis, pp. 14–15 | Problema, datos, EDA, preparación, entrenamiento | Orden general del trabajo; ejemplo de un sistema visual |
+| 03 · EDA, pp. 19–23, 53–64 | Resúmenes numéricos, frecuencias, gráficos y contingencias | Describir imágenes, etiquetas, desbalance y coexistencia de hallazgos |
+| 04 · Faltantes, pp. 48–57 | Outliers y causas de faltantes | Diferenciar errores, casos raros, etiquetas ausentes e incertidumbre |
+| 05 · Limpieza, pp. 6–14, 17–24, 37–38 | Desbalance, particiones, limpieza y codificación | Preparar metadatos y la variable objetivo |
+| 06 · Nuevas features, pp. 5, 8–12, 19–31, 51 | Fuga, features, escalado, balance y preparación de imágenes | Construir un pipeline que aprenda transformaciones solo de train |
+| 08 · Optimización, pp. 24–26 | Gradiente y tasa de aprendizaje | Explicar el ajuste si el modelo elegido utiliza optimización por gradiente |
+| 09 · Aprendizaje automático, pp. 16–23, 24–47 | Generalización, sesgo/varianza, validación e hiperparámetros | Comparar candidatos y separar selección de evaluación final |
+| EXTRA · Computer Vision I, pp. 24–29, 34–42, 44–75 | Matrices, canales, lectura, grises, umbralización y filtros | Inspeccionar las radiografías y experimentar con su representación |
 
 No es necesario utilizar todos los temas. Agentes, BFS, A*, Hanoi y algoritmos genéticos no resuelven una necesidad inicial de este clasificador. El slide 10 desarrolla regresión: sus errores MAE/MSE/RMSE no se trasladan automáticamente a esta clasificación. La regularización ya tiene una base general en el slide 09, p. 47.
 
@@ -116,7 +116,7 @@ Base: slides 02, p. 15; 06, pp. 8–12, 19–31 y 51; EXTRA, pp. 24–29 y 34–
 
 La umbralización convierte intensidades en una imagen binaria; **no convierte por sí sola una radiografía en un diagnóstico**. No aplicarla como paso obligatorio. Si se prueba, comparar contra grises y revisar pérdida de detalle. Tampoco aplicar filtros gaussianos o de mediana solo por estar en el temario: incorporarlos si un experimento de validación los justifica.
 
-**Entregable:** transformación reproducible imagen → entrada numérica. **Cierre:** transformar una muestra sin errores y poder mostrar original y resultado.
+**Entregable:** transformación reproducible de imagen a entrada numérica. **Cierre:** transformar una muestra sin errores y poder mostrar original y resultado.
 
 ## 7. Etapa 5: entrenar una primera versión sencilla
 
@@ -160,7 +160,7 @@ Base: slide 05, p. 7, matriz de confusión; slide 09, pp. 19, 38–47.
 
 ## 9. Etapa 7: guardar y usar el modelo
 
-Aplicación práctica del flujo entrenamiento → evaluación → predicción del slide 09, p. 20. La persistencia del artefacto requiere completar detalles de implementación.
+Aplicación práctica del flujo entrenamiento, evaluación y predicción del slide 09, p. 20. La persistencia del artefacto requiere completar detalles de implementación.
 
 - [ ] Guardar el clasificador, su preprocesamiento, el mapa de etiquetas y la configuración juntos o con referencias inequívocas.
 - [ ] Crear una función o comando que reciba una imagen, aplique el mismo pipeline y devuelva la etiqueta estimada.

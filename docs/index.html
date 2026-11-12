@@ -167,7 +167,7 @@
             <text class="t" x="50" y="110">Preprocesamiento</text>
             <text class="d" x="50" y="130">Escala de grises y 224×224 sin deformar:</text>
             <text class="d" x="50" y="148">se conserva la proporción con bordes negros</text>
-            <text class="d" x="50" y="166">Intensidades ÷ 255 → valores entre 0 y 1</text>
+            <text class="d" x="50" y="166">Intensidades / 255: valores entre 0 y 1</text>
 
             <line class="flecha" x1="190" y1="180" x2="190" y2="197"/><polygon class="punta" points="184,196 196,196 190,204"/>
 
@@ -184,7 +184,7 @@
             <text class="t" x="50" y="328">DenseNet121</text>
             <text class="d" x="50" y="348">Red convolucional preentrenada en ImageNet</text>
             <text class="d" x="50" y="366">El gris se copia en los 3 canales de entrada</text>
-            <text class="d" x="50" y="384">Última capa → 1 salida: el logit</text>
+            <text class="d" x="50" y="384">Última capa: 1 salida, el logit</text>
 
             <line class="flecha" x1="190" y1="398" x2="190" y2="415"/><polygon class="punta" points="184,414 196,414 190,422"/>
 
@@ -406,7 +406,7 @@ modelo_b_densenet121_v1 · umbral 0.414 (elegido en validación)
 
       function umbralDe(k) { return k === ELEGIDO ? UMBRAL_ELEGIDO : k / 1000; }
       function dec(x, d) { return x.toFixed(d).replace('.', ','); }
-      function pct(x) { return isNaN(x) ? '—' : dec(x * 100, 1) + '%'; }
+      function pct(x) { return isNaN(x) ? '-' : dec(x * 100, 1) + '%'; }
       function miles(v) { return String(v).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
 
       function calcular(t) {
