@@ -1,0 +1,198 @@
+{
+  "created_at": "2026-11-03T13:21:24.915463+00:00",
+  "model": "models/modelo_a_densenet121_v1",
+  "data": "data/processed/nih_effusion_pa_40_60_v1",
+  "split": "val",
+  "device": "mps",
+  "versions": {
+    "torch": "2.15.0",
+    "torchvision": "0.29.2",
+    "numpy": "2.3.5"
+  },
+  "target": "Effusion",
+  "images": 1813,
+  "patients": 1181,
+  "positives": 725,
+  "threshold": 0.3792879283428192,
+  "threshold_source": "validación, guardado en modelo.pt",
+  "metrics": {
+    "auc": 0.8977611561866126,
+    "threshold": 0.3792879283428192,
+    "tp": 590,
+    "fp": 169,
+    "fn": 135,
+    "tn": 919,
+    "accuracy": 0.8323221180364038,
+    "precision": 0.7773386034255599,
+    "recall": 0.8137931034482758,
+    "specificity": 0.8446691176470589,
+    "f1": 0.7951482479784366
+  },
+  "intervals_95": {
+    "auc": [
+      0.8808118584217302,
+      0.9143370040143917
+    ],
+    "f1": [
+      0.7686522929286621,
+      0.8210680347945927
+    ],
+    "recall": [
+      0.7799986072423398,
+      0.8454103838610653
+    ],
+    "specificity": [
+      0.8213507814869885,
+      0.8693234476367007
+    ],
+    "precision": [
+      0.7445552746794537,
+      0.8087903288318965
+    ]
+  },
+  "bootstrap": {
+    "unit": "patient",
+    "rounds": 2000,
+    "seed": 42,
+    "valid_rounds": 2000
+  },
+  "metrics_threshold_0_5": {
+    "threshold": 0.5,
+    "tp": 548,
+    "fp": 125,
+    "fn": 177,
+    "tn": 963,
+    "accuracy": 0.8334252619966905,
+    "precision": 0.8142644873699851,
+    "recall": 0.7558620689655172,
+    "specificity": 0.8851102941176471,
+    "f1": 0.7839771101573677
+  },
+  "baselines": {
+    "always_positive": {
+      "threshold": 1.0,
+      "tp": 725,
+      "fp": 1088,
+      "fn": 0,
+      "tn": 0,
+      "accuracy": 0.3998896856039713,
+      "precision": 0.3998896856039713,
+      "recall": 1.0,
+      "specificity": 0.0,
+      "f1": 0.5713159968479118
+    },
+    "always_negative": {
+      "threshold": 1.0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 725,
+      "tn": 1088,
+      "accuracy": 0.6001103143960287,
+      "precision": 0.0,
+      "recall": 0.0,
+      "specificity": 1.0,
+      "f1": 0.0
+    }
+  },
+  "at_prevalence": [
+    {
+      "prevalence": 0.098,
+      "precision": 0.36273837368173384,
+      "f1": 0.5018038065217338
+    },
+    {
+      "prevalence": 0.158,
+      "precision": 0.49574100634045537,
+      "f1": 0.6161437247655298
+    }
+  ],
+  "subgroups": {
+    "negativos_sin_hallazgos": {
+      "images": 1432,
+      "positives": 725,
+      "auc": 0.9153938448031995,
+      "recall": 0.8137931034482758,
+      "specificity": 0.8882602545968883
+    },
+    "negativos_con_otros_hallazgos": {
+      "images": 1106,
+      "positives": 725,
+      "auc": 0.8650411801973029,
+      "recall": 0.8137931034482758,
+      "specificity": 0.7637795275590551
+    },
+    "positivos_sin_otros_hallazgos": {
+      "images": 1330,
+      "positives": 242,
+      "auc": 0.895607984929509,
+      "recall": 0.8347107438016529,
+      "specificity": 0.8446691176470589
+    },
+    "positivos_con_otros_hallazgos": {
+      "images": 1571,
+      "positives": 483,
+      "auc": 0.898839970770917,
+      "recall": 0.8033126293995859,
+      "specificity": 0.8446691176470589
+    },
+    "sexo_F": {
+      "images": 845,
+      "positives": 341,
+      "auc": 0.8996241213983149,
+      "recall": 0.8152492668621701,
+      "specificity": 0.8373015873015873
+    },
+    "sexo_M": {
+      "images": 968,
+      "positives": 384,
+      "auc": 0.896154394977169,
+      "recall": 0.8125,
+      "specificity": 0.851027397260274
+    },
+    "edad_menor_40": {
+      "images": 491,
+      "positives": 171,
+      "auc": 0.9016995614035088,
+      "recall": 0.7660818713450293,
+      "specificity": 0.884375
+    },
+    "edad_40_59": {
+      "images": 818,
+      "positives": 309,
+      "auc": 0.8880284331864624,
+      "recall": 0.7993527508090615,
+      "specificity": 0.8546168958742633
+    },
+    "edad_60_o_mas": {
+      "images": 504,
+      "positives": 245,
+      "auc": 0.9059175793869672,
+      "recall": 0.8653061224489796,
+      "specificity": 0.7760617760617761
+    },
+    "seguimiento_0": {
+      "images": 648,
+      "positives": 139,
+      "auc": 0.9010332009441563,
+      "recall": 0.7697841726618705,
+      "specificity": 0.9056974459724951
+    },
+    "seguimiento_1_9": {
+      "images": 925,
+      "positives": 444,
+      "auc": 0.8930437714221497,
+      "recall": 0.8175675675675675,
+      "specificity": 0.817047817047817
+    },
+    "seguimiento_10_o_mas": {
+      "images": 240,
+      "positives": 142,
+      "auc": 0.8301954584650761,
+      "recall": 0.8450704225352113,
+      "specificity": 0.6632653061224489
+    }
+  },
+  "subgroups_note": "Los grupos por hallazgo comparan esa parte de una clase contra toda la otra.",
+  "milliseconds_per_image_batch": 29.843762249310057,
+  "milliseconds_per_image_cpu": 74.08350000332575
+}

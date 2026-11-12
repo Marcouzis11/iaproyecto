@@ -25,6 +25,10 @@ venv/
 !/models/modelo_b_densenet121_v1/report.json
 !/models/modelo_b_densenet121_v1/historial.csv
 !/models/modelo_b_densenet121_v1/evaluacion_test/report.json
+# Reportes livianos de todos los modelos y comparaciones (trazabilidad de experimentos).
+!/models/*/report.json
+!/models/*/historial.csv
+!/models/*/evaluacion_*/report.json
 
 # Material de la cátedra: queda local, no es parte del proyecto.
 /Slides/
