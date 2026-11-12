@@ -1,0 +1,84 @@
+{
+  "created_at": "2026-11-05T01:13:35.996240+00:00",
+  "config": {
+    "architecture": "densenet121",
+    "pretrained": true,
+    "epochs": 15,
+    "patience": 4,
+    "batch_size": 32,
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0001,
+    "augmentation": true,
+    "repeat_positives": 1,
+    "seed": 42,
+    "device": "auto",
+    "data": "data/processed/nih_effusion_pa_v2_control",
+    "output": "models/modelo_control_v2_densenet121"
+  },
+  "limit": null,
+  "device": "mps",
+  "versions": {
+    "torch": "2.15.0",
+    "torchvision": "0.29.2",
+    "numpy": "2.3.5"
+  },
+  "train_images": 7252,
+  "train_samples_per_epoch": 7252,
+  "train_positive_fraction": 0.40002757859900717,
+  "val_images": 732,
+  "best_epoch": 4,
+  "epochs_run": 8,
+  "train_seconds": 1794.5165104169864,
+  "val": {
+    "auc": 0.915204428308209,
+    "threshold": 0.6360270380973816,
+    "tp": 243,
+    "fp": 65,
+    "fn": 50,
+    "tn": 374,
+    "accuracy": 0.842896174863388,
+    "precision": 0.788961038961039,
+    "recall": 0.8293515358361775,
+    "specificity": 0.8519362186788155,
+    "f1": 0.8086522462562395
+  },
+  "val_threshold_0_5": {
+    "threshold": 0.5,
+    "tp": 257,
+    "fp": 93,
+    "fn": 36,
+    "tn": 346,
+    "accuracy": 0.8237704918032787,
+    "precision": 0.7342857142857143,
+    "recall": 0.8771331058020477,
+    "specificity": 0.7881548974943052,
+    "f1": 0.7993779160186625
+  },
+  "val_baselines": {
+    "always_positive": {
+      "threshold": 1.0,
+      "tp": 293,
+      "fp": 439,
+      "fn": 0,
+      "tn": 0,
+      "accuracy": 0.40027322404371585,
+      "precision": 0.40027322404371585,
+      "recall": 1.0,
+      "specificity": 0.0,
+      "f1": 0.5717073170731707
+    },
+    "always_negative": {
+      "threshold": 1.0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 293,
+      "tn": 439,
+      "accuracy": 0.5997267759562842,
+      "precision": 0.0,
+      "recall": 0.0,
+      "specificity": 1.0,
+      "f1": 0.0
+    }
+  },
+  "note": "El umbral se eligió con val, así que estas métricas son optimistas. Test no se usó."
+}

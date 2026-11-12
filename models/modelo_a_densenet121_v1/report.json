@@ -1,0 +1,81 @@
+{
+  "created_at": "2026-11-03T00:27:21.721658+00:00",
+  "config": {
+    "architecture": "densenet121",
+    "pretrained": true,
+    "epochs": 15,
+    "patience": 4,
+    "batch_size": 32,
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0001,
+    "augmentation": true,
+    "seed": 42,
+    "device": "auto",
+    "data": "data/processed/nih_effusion_pa_40_60_v1",
+    "output": "models/modelo_a_densenet121_v1"
+  },
+  "limit": null,
+  "device": "mps",
+  "versions": {
+    "torch": "2.15.0",
+    "torchvision": "0.29.2",
+    "numpy": "2.3.5"
+  },
+  "train_images": 10270,
+  "val_images": 1813,
+  "best_epoch": 3,
+  "epochs_run": 7,
+  "train_seconds": 2881.023497375001,
+  "val": {
+    "auc": 0.8977611561866126,
+    "threshold": 0.3792879283428192,
+    "tp": 590,
+    "fp": 169,
+    "fn": 135,
+    "tn": 919,
+    "accuracy": 0.8323221180364038,
+    "precision": 0.7773386034255599,
+    "recall": 0.8137931034482758,
+    "specificity": 0.8446691176470589,
+    "f1": 0.7951482479784366
+  },
+  "val_threshold_0_5": {
+    "threshold": 0.5,
+    "tp": 548,
+    "fp": 125,
+    "fn": 177,
+    "tn": 963,
+    "accuracy": 0.8334252619966905,
+    "precision": 0.8142644873699851,
+    "recall": 0.7558620689655172,
+    "specificity": 0.8851102941176471,
+    "f1": 0.7839771101573677
+  },
+  "val_baselines": {
+    "always_positive": {
+      "threshold": 1.0,
+      "tp": 725,
+      "fp": 1088,
+      "fn": 0,
+      "tn": 0,
+      "accuracy": 0.3998896856039713,
+      "precision": 0.3998896856039713,
+      "recall": 1.0,
+      "specificity": 0.0,
+      "f1": 0.5713159968479118
+    },
+    "always_negative": {
+      "threshold": 1.0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 725,
+      "tn": 1088,
+      "accuracy": 0.6001103143960287,
+      "precision": 0.0,
+      "recall": 0.0,
+      "specificity": 1.0,
+      "f1": 0.0
+    }
+  },
+  "note": "El umbral se eligió con val, así que estas métricas son optimistas. Test no se usó."
+}

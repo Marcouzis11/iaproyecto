@@ -1,0 +1,84 @@
+{
+  "created_at": "2026-11-05T01:44:44.016500+00:00",
+  "config": {
+    "architecture": "densenet121",
+    "pretrained": true,
+    "epochs": 15,
+    "patience": 4,
+    "batch_size": 32,
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0001,
+    "augmentation": true,
+    "repeat_positives": 1,
+    "seed": 42,
+    "device": "auto",
+    "data": "data/processed/nih_effusion_pa_v2_c",
+    "output": "models/modelo_c_v2_densenet121"
+  },
+  "limit": null,
+  "device": "mps",
+  "versions": {
+    "torch": "2.15.0",
+    "torchvision": "0.29.2",
+    "numpy": "2.3.5"
+  },
+  "train_images": 7252,
+  "train_samples_per_epoch": 7252,
+  "train_positive_fraction": 0.40002757859900717,
+  "val_images": 732,
+  "best_epoch": 4,
+  "epochs_run": 8,
+  "train_seconds": 1863.4792405409971,
+  "val": {
+    "auc": 0.9172102280236654,
+    "threshold": 0.5327513813972473,
+    "tp": 239,
+    "fp": 46,
+    "fn": 54,
+    "tn": 393,
+    "accuracy": 0.8633879781420765,
+    "precision": 0.8385964912280702,
+    "recall": 0.8156996587030717,
+    "specificity": 0.8952164009111617,
+    "f1": 0.8269896193771626
+  },
+  "val_threshold_0_5": {
+    "threshold": 0.5,
+    "tp": 240,
+    "fp": 52,
+    "fn": 53,
+    "tn": 387,
+    "accuracy": 0.8565573770491803,
+    "precision": 0.821917808219178,
+    "recall": 0.8191126279863481,
+    "specificity": 0.8815489749430524,
+    "f1": 0.8205128205128205
+  },
+  "val_baselines": {
+    "always_positive": {
+      "threshold": 1.0,
+      "tp": 293,
+      "fp": 439,
+      "fn": 0,
+      "tn": 0,
+      "accuracy": 0.40027322404371585,
+      "precision": 0.40027322404371585,
+      "recall": 1.0,
+      "specificity": 0.0,
+      "f1": 0.5717073170731707
+    },
+    "always_negative": {
+      "threshold": 1.0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 293,
+      "tn": 439,
+      "accuracy": 0.5997267759562842,
+      "precision": 0.0,
+      "recall": 0.0,
+      "specificity": 1.0,
+      "f1": 0.0
+    }
+  },
+  "note": "El umbral se eligió con val, así que estas métricas son optimistas. Test no se usó."
+}
