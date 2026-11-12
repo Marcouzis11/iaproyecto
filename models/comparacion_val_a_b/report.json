@@ -1,0 +1,110 @@
+{
+  "created_at": "2026-11-03T13:19:48.251167+00:00",
+  "split": "val",
+  "device": "mps",
+  "versions": {
+    "torch": "2.15.0",
+    "torchvision": "0.29.2",
+    "numpy": "2.3.5"
+  },
+  "models": {
+    "A": "models/modelo_a_densenet121_v1",
+    "B": "models/modelo_b_densenet121_v1"
+  },
+  "data": "data/processed/nih_effusion_pa_40_60_v1",
+  "images": 1813,
+  "patients": 1181,
+  "positives": 725,
+  "metrics": {
+    "A": {
+      "auc": 0.8977611561866126,
+      "f1": 0.7951482479784366,
+      "recall": 0.8137931034482758,
+      "specificity": 0.8446691176470589,
+      "precision": 0.7773386034255599,
+      "threshold": 0.3792879283428192,
+      "tp": 590,
+      "fp": 169,
+      "fn": 135,
+      "tn": 919,
+      "accuracy": 0.8323221180364038
+    },
+    "B": {
+      "auc": 0.9050874746450305,
+      "f1": 0.8,
+      "recall": 0.8551724137931035,
+      "specificity": 0.8115808823529411,
+      "precision": 0.7515151515151515,
+      "threshold": 0.413917601108551,
+      "tp": 620,
+      "fp": 205,
+      "fn": 105,
+      "tn": 883,
+      "accuracy": 0.8290126861555432
+    }
+  },
+  "difference": "B − A",
+  "differences": {
+    "auc_diferencia": 0.007326318458417913,
+    "f1_diferencia": 0.004851752021563405,
+    "recall_diferencia": 0.04137931034482767,
+    "specificity_diferencia": -0.03308823529411775,
+    "precision_diferencia": -0.025823451910408468
+  },
+  "intervals_95": {
+    "auc_diferencia": [
+      -0.0015053747730145671,
+      0.016257984055087937
+    ],
+    "f1_diferencia": [
+      -0.0103322263580718,
+      0.020715408784405445
+    ],
+    "recall_diferencia": [
+      0.02183242729406178,
+      0.061728859883980414
+    ],
+    "specificity_diferencia": [
+      -0.051757561754327,
+      -0.015562817345958529
+    ],
+    "precision_diferencia": [
+      -0.04619077807014174,
+      -0.006771908393968724
+    ]
+  },
+  "probability_second_better": {
+    "auc_diferencia": 0.947,
+    "f1_diferencia": 0.745,
+    "recall_diferencia": 1.0,
+    "specificity_diferencia": 0.0,
+    "precision_diferencia": 0.0035
+  },
+  "bootstrap": {
+    "unit": "patient",
+    "rounds": 2000,
+    "seed": 42,
+    "valid_rounds": 2000
+  },
+  "disagreements": 154,
+  "only_first_right": 80,
+  "only_second_right": 74,
+  "training": {
+    "A": {
+      "best_epoch": 3,
+      "epochs_run": 7,
+      "train_seconds": 2881.023497375001,
+      "train_images": 10270,
+      "train_samples_per_epoch": 10270
+    },
+    "B": {
+      "best_epoch": 1,
+      "epochs_run": 5,
+      "train_seconds": 4724.805823333001,
+      "train_images": 22594,
+      "train_samples_per_epoch": 30810
+    }
+  },
+  "correlation": 0.928385589086839,
+  "note": "Época y umbral se eligieron con val: los valores absolutos son optimistas; la diferencia es pareada sobre las mismas imágenes y pacientes."
+}
