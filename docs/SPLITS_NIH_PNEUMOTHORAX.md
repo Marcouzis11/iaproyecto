@@ -36,7 +36,7 @@ Un 0 no significa radiografía normal: significa que ese hallazgo no está anota
   - Las dos clases están presentes en cada conjunto.
 
 ## Preprocesamiento
-Sigue el flujo "split → calcular en train → aplicar a todos" visto en clase.
+Sigue el flujo "split, calcular en train y aplicar a todos" visto en clase.
 
 1. **Split primero**, antes de calcular cualquier transformación.
 2. Cada imagen se pasa a **escala de grises** y se lleva a **224×224** sin deformarla: se redimensiona respetando la proporción y se completan los bordes en negro. Las intensidades se escalan a [0, 1] dividiendo por 255.
