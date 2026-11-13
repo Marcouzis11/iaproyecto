@@ -30,3 +30,5 @@ Antes de la entrega se copió el repositorio a una carpeta nueva, se creó un en
 - Pasaron las 46 pruebas.
 - `rx-predecir examples/radiografias/*.png` reprodujo los puntajes que el modelo B había dado a esas imágenes en la evaluación de test (0,940, 0,345, 0,575 y 0,186), en MPS y en CPU.
 - `scripts/flujo_completo.sh demo` corrió de punta a punta.
+
+Para la entrega del MVP se repitió en Windows 11 con Python 3.13, en entornos nuevos: uno con pip (`python -m pip install -e .`) y otro con uv (`uv pip install -r requirements.txt -e .`). En los dos pasaron todas las pruebas y `rx-predecir` dio en CPU los mismos puntajes (0,940, 0,345, 0,575 y 0,186). Desde entonces, GitHub Actions repite la instalación, las pruebas y `rx-predecir` en Ubuntu y Windows en cada push ([`tests.yml`](../.github/workflows/tests.yml)).

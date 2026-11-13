@@ -322,6 +322,7 @@ El análisis completo está en [resultados de A y B](docs/RESULTADOS_MODELOS.md)
 .
 ├── README.md
 ├── LICENSE
+├── .github/workflows/          # Integración continua: pruebas y rx-predecir en cada push
 ├── pyproject.toml              # Paquete, dependencias fijadas y comandos rx-*
 ├── requirements.txt            # Entorno exacto del entrenamiento, con dependencias indirectas
 ├── configs/                    # JSON de preparación (nih*.json) y de entrenamiento (modelo_*.json)
@@ -357,6 +358,8 @@ El resto de los modelos (A, control y C) y los datos preparados quedan fuera de 
 - Git
 - Unos 2 GB libres para las dependencias (PyTorch). Para entrenar, además, 45 GB para NIH y 10 GB para los datos preparados.
 
+Instalación verificada desde cero en macOS (Apple M4, Python 3.11) y en Windows 11 (Python 3.13): las pruebas pasan y `rx-predecir` da los mismos puntajes en los dos sistemas.
+
 ### Pasos
 
 ```bash
@@ -376,6 +379,8 @@ python -m pip install -e .
 
 Para reproducir el entorno exacto del entrenamiento, incluidas las dependencias indirectas, usar `python -m pip install -r requirements.txt -e .` en el paso 4. Para abrir los notebooks: `python -m pip install -e ".[notebooks]"`.
 
+**Con [uv](https://docs.astral.sh/uv/):** en el paso 2, `uv venv --python 3.11`; en el paso 4, `uv pip install -r requirements.txt -e .`. La activación es la misma. Verificado en Windows 11 con Python 3.13: instala sin errores, pasan las pruebas y `rx-predecir` da los puntajes documentados.
+
 **Variables de entorno:** no hace falta ninguna. Todas las rutas y parámetros están en los JSON de `configs/`. El dispositivo se elige solo (CUDA, MPS de Apple o CPU) y se puede forzar con `--dispositivo cpu`.
 
 **Comprobar la instalación:**
@@ -385,6 +390,8 @@ python -m unittest discover -s tests
 ```
 
 Corre 48 pruebas en alrededor de un minuto, sin necesitar el dataset: usan datos sintéticos, salvo las de `tests/test_examples.py`, que pasan el modelo final por las cuatro radiografías de ejemplo y comprueban los puntajes documentados.
+
+**Integración continua:** en cada push y pull request, GitHub Actions instala el proyecto con las versiones fijadas, corre estas pruebas y ejecuta `rx-predecir` sobre las cuatro radiografías de ejemplo, comprobando que cada una dé la clase documentada y que un archivo que no es imagen termine con error. Corre en Ubuntu con Python 3.11 y en Windows con Python 3.13 ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)).
 
 ---
 
