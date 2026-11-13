@@ -384,7 +384,7 @@ Para reproducir el entorno exacto del entrenamiento, incluidas las dependencias 
 python -m unittest discover -s tests
 ```
 
-Corre 46 pruebas en unos 30 segundos, con datos sintéticos: no necesitan el dataset.
+Corre 48 pruebas en alrededor de un minuto, sin necesitar el dataset: usan datos sintéticos, salvo las de `tests/test_examples.py`, que pasan el modelo final por las cuatro radiografías de ejemplo y comprueban los puntajes documentados.
 
 ---
 

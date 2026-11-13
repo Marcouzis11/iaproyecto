@@ -2,7 +2,7 @@
 
 ## Pruebas automáticas
 
-`python -m unittest discover -s tests` corre las pruebas con datos sintéticos, sin necesitar el dataset:
+`python -m unittest discover -s tests` corre las pruebas sin necesitar el dataset. Todas usan datos sintéticos, salvo `tests/test_examples.py`, que usa el modelo final y las radiografías de ejemplo versionadas:
 
 | Archivo | Qué comprueba |
 |---|---|
@@ -10,6 +10,7 @@
 | `tests/test_training.py` | Métricas contra cálculos a mano; umbral óptimo igual a una búsqueda exhaustiva; baseline siempre positivo; entrenamiento reproducible que nunca abre test; salidas que no se pisan. |
 | `tests/test_evaluation.py` | Bootstrap que remuestrea pacientes enteros; test evaluado con el umbral de validación y una sola vez; comparación pareada. |
 | `tests/test_inference.py` | La predicción sobre archivos da los mismos puntajes que los arrays preparados; salida en texto, JSON y CSV; errores claros con archivos inválidos o un modelo inexistente. |
+| `tests/test_examples.py` | El modelo B versionado da, sobre las cuatro radiografías de ejemplo, el puntaje documentado hasta el tercer decimal y el umbral 0,414; las cuatro cubren las celdas de la matriz de confusión. |
 
 `notebooks/02_pruebas_pipeline.ipynb` repite las pruebas de preparación sobre el código del notebook.
 
