@@ -467,6 +467,7 @@ Ver [notebooks](notebooks/README.md).
 - [ ] Anotar a mano dispositivos (cables, catéteres) en una muestra de test, para medir cuánto los usa el modelo.
 - [ ] Validación externa con otro dataset, por ejemplo [CheXpert](https://stanfordmlgroup.github.io/competitions/chexpert/), que el preparador ya sabe leer.
 - [ ] Probar resoluciones mayores que 224×224, donde los derrames chicos no se pierdan.
+- [ ] Medir F1 y especificidad por sexo y por edad en el test oficial, como ya se hizo por estudios previos, con las predicciones guardadas y sin volver a evaluar el modelo.
 - [ ] API REST con FastAPI e interfaz con Streamlit sobre `rx-predecir`.
 
 ---
