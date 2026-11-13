@@ -31,7 +31,7 @@
 - [Roadmap](#️-roadmap)
 - [Autores](#autores)
 - [Licencia](#licencia)
-- [Agradecimientos y referencias](#agradecimientos-y-referencias)
+- [Referencias](#referencias)
 
 ---
 
@@ -485,9 +485,8 @@ El código está bajo la licencia [MIT](LICENSE). Las radiografías de NIH Chest
 
 ---
 
-## Agradecimientos y referencias
+## Referencias
 
 - Wang X., Peng Y., Lu L., Lu Z., Bagheri M., Summers R. M. *ChestX-ray8: Hospital-scale Chest X-ray Database and Benchmarks on Weakly-Supervised Classification and Localization of Common Thorax Diseases.* CVPR 2017. Dataset del [NIH Clinical Center](https://nihcc.app.box.com/v/ChestXray-NIHCC).
 - Huang G., Liu Z., van der Maaten L., Weinberger K. Q. *Densely Connected Convolutional Networks.* CVPR 2017.
 - Rajpurkar P. et al. *CheXNet: Radiologist-Level Pneumonia Detection on Chest X-Rays with Deep Learning.* arXiv:1711.05225, 2017.
-- Ing. Hernando Alexis González, por la consigna, la plantilla del trabajo final y el material de la cursada.
