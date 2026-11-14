@@ -35,12 +35,25 @@ Cada capa depende solo de las anteriores: la preparación no sabe nada del model
 | `main` | Versión entregable. La cátedra evalúa esta rama. |
 | `feature/preprocesamiento` | Auditoría, split por paciente, selección 40/60 y preparación de NIH. |
 | `feature/modelado` | Entrenamiento, evaluación, predicción, modelos A, B y C, y documentación de la entrega. Parte de `feature/preprocesamiento`. |
+| `chore/entrega-mvp-final` | Integración continua, verificación de la instalación en Windows y material de la presentación del MVP. |
 
 Cada etapa se desarrolla en su rama y se integra en `main` con un pull request. `feature/modelado` salió de `feature/preprocesamiento` y las dos entraron juntas en el PR #1; la documentación posterior entró por ramas `docs/*` (PR #2 y #3). Los PR se integraron sin revisión formal en GitHub.
 
 ## Commits
 
-Mensajes en español con prefijo semántico: `feat:` para funcionalidad nueva, `docs:` para documentación y resultados, `chore:` para organización. Cada commit deja el código funcionando y las pruebas pasando.
+Mensajes en español con prefijo semántico: `feat:` para funcionalidad nueva, `docs:` para documentación y resultados, `chore:` para organización y `ci:` para la integración continua. Cada commit deja el código funcionando y las pruebas pasando.
+
+El título dice qué cambia y el cuerpo, qué problema resuelve. Por ejemplo:
+
+```text
+ci: correr las pruebas y rx-predecir en cada push
+
+La instalación solo se había verificado en macOS; ahora se prueba en Ubuntu y Windows.
+```
+
+## Integración continua
+
+`.github/workflows/tests.yml` corre en cada push y pull request, en Ubuntu (Python 3.11) y Windows (Python 3.13): instala el proyecto con las versiones fijadas, ejecuta las pruebas de `tests/` y prueba `rx-predecir` con las radiografías de ejemplo. Un pull request a `main` se integra con la ejecución en verde.
 
 ## Experimentos
 
