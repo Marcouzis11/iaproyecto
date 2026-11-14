@@ -12,6 +12,7 @@ venv/
 # Entornos / secretos
 .env
 .env.*
+!.env.example
 
 # Datos y artefactos locales: solo se versionan marcadores de directorio.
 /data/**

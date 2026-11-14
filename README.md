@@ -323,6 +323,7 @@ El análisis completo está en [resultados de A y B](docs/RESULTADOS_MODELOS.md)
 ├── README.md
 ├── LICENSE
 ├── .github/workflows/          # Integración continua: pruebas y rx-predecir en cada push
+├── .env.example                # Variables de entorno opcionales, sin claves (no hace falta ninguna)
 ├── pyproject.toml              # Paquete, dependencias fijadas y comandos rx-*
 ├── requirements.txt            # Entorno exacto del entrenamiento, con dependencias indirectas
 ├── configs/                    # JSON de preparación (nih*.json) y de entrenamiento (modelo_*.json)
@@ -381,7 +382,7 @@ Para reproducir el entorno exacto del entrenamiento, incluidas las dependencias 
 
 **Con [uv](https://docs.astral.sh/uv/):** en el paso 2, `uv venv --python 3.11`; en el paso 4, `uv pip install -r requirements.txt -e .`. La activación es la misma. Verificado en Windows 11 con Python 3.13: instala sin errores, pasan las pruebas y `rx-predecir` da los puntajes documentados.
 
-**Variables de entorno:** no hace falta ninguna. Todas las rutas y parámetros están en los JSON de `configs/`. El dispositivo se elige solo (CUDA, MPS de Apple o CPU) y se puede forzar con `--dispositivo cpu`.
+**Variables de entorno:** no hace falta ninguna. Todas las rutas y parámetros están en los JSON de `configs/`. [`.env.example`](.env.example) lista las opcionales que leen Python y PyTorch (codificación de la salida, caché de pesos, GPU), sin claves. El dispositivo se elige solo (CUDA, MPS de Apple o CPU) y se puede forzar con `--dispositivo cpu`.
 
 **Comprobar la instalación:**
 
