@@ -33,7 +33,11 @@ rx-entrenar = "rx_torax.training.train:main"
 rx-evaluar = "rx_torax.evaluation.evaluate:main"
 rx-comparar = "rx_torax.evaluation.compare:main"
 rx-predecir = "rx_torax.inference.predict:main"
+rx-probar = "rx_torax.inference.app:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["rx_torax*"]
+
+[tool.setuptools.package-data]
+"rx_torax.inference" = ["pagina.html"]
