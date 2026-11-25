@@ -21,9 +21,12 @@ venv/
 /models/**
 !/models/**/
 !/models/**/.gitkeep
-# Excepción: los pesos del modelo final (B), para predecir apenas se clona. Los de A, control y C
-# están en el release pesos-v1 de GitHub y se bajan con rx-descargar-pesos.
+# Excepción: los pesos de los cuatro modelos, para predecir y probar cualquiera apenas se clona.
+# Se nombran uno por uno para no subir por error los de experimentos descartados.
+!/models/modelo_a_densenet121_v1/modelo.pt
 !/models/modelo_b_densenet121_v1/modelo.pt
+!/models/modelo_control_v2_densenet121/modelo.pt
+!/models/modelo_c_v2_densenet121/modelo.pt
 # Reportes livianos de todos los modelos y comparaciones (trazabilidad de experimentos).
 !/models/*/report.json
 !/models/*/historial.csv

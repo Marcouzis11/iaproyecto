@@ -17,9 +17,9 @@
 | `src/rx_torax/preprocessing/` | Lectura de imágenes y transformación a 224×224. La usan la preparación y la predicción. |
 | `src/rx_torax/training/` | DenseNet121, aumento de datos y entrenamiento. Nunca abre test. |
 | `src/rx_torax/evaluation/` | Métricas, bootstrap por paciente, evaluación única en test y comparación pareada. |
-| `src/rx_torax/inference/` | `rx-predecir` y `rx-probar`: cargan `modelo.pt` y predicen sobre archivos de imagen. `rx-descargar-pesos` baja los pesos publicados. |
+| `src/rx_torax/inference/` | `rx-predecir` y `rx-probar`: cargan `modelo.pt` y predicen sobre archivos de imagen. |
 | `configs/` | JSON de preparación (`nih*.json`, `demo.json`) y de entrenamiento (`modelo_*.json`), y el SHA-256 de cada archivo de los datos preparados de B (`nih_effusion_pa_modelo_b_v1.sha256`). |
-| `models/` | Un directorio por modelo. En git están los pesos del modelo final (B), las predicciones de cada evaluación (`predicciones_*.csv`: imagen, paciente, etiqueta y puntaje) y los reportes de todos los modelos y comparaciones (`report.json`, `historial.csv`). Los pesos de A, control y C están en el release `pesos-v1` de GitHub. Las figuras no se versionan. |
+| `models/` | Un directorio por modelo. En git están los pesos de los cuatro modelos (`modelo.pt`), las predicciones de cada evaluación (`predicciones_*.csv`: imagen, paciente, etiqueta y puntaje) y los reportes de todos los modelos y comparaciones (`report.json`, `historial.csv`). Las figuras no se versionan. |
 | `notebooks/` | Análisis exploratorio de NIH (guardado con resultados), preparación en celdas y sus pruebas. |
 | `tests/` | Pruebas automáticas con datos sintéticos (`unittest`). |
 | `scripts/` | `flujo_completo.sh` (demo o NIH de punta a punta) y `preparar.ps1` (Windows). |
@@ -54,7 +54,7 @@ La instalación solo se había verificado en macOS; ahora se prueba en Ubuntu y 
 
 ## Integración continua
 
-`.github/workflows/tests.yml` corre en cada push y pull request, en Ubuntu (Python 3.11) y Windows (Python 3.13): instala el proyecto con las versiones fijadas, baja los pesos publicados, ejecuta las pruebas de `tests/`, recalcula los resultados con `rx-recalcular` y prueba `rx-predecir` con los cuatro modelos sobre las radiografías de ejemplo. Un pull request a `main` se integra con la ejecución en verde.
+`.github/workflows/tests.yml` corre en cada push y pull request, en Ubuntu (Python 3.11) y Windows (Python 3.13): instala el proyecto con las versiones fijadas, ejecuta las pruebas de `tests/`, recalcula los resultados con `rx-recalcular` y prueba `rx-predecir` con los cuatro modelos sobre las radiografías de ejemplo. Un pull request a `main` se integra con la ejecución en verde.
 
 ## Experimentos
 
