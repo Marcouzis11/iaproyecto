@@ -2,7 +2,9 @@
 
 Compara dos modelos sobre el mismo conjunto, con bootstrap pareado por paciente.
 En validación sirve para elegir el modelo. En test (--conjunto test) solo lee las predicciones
-que ya guardó rx-evaluar: no vuelve a predecir ni elige nada.
+que ya guardó rx-evaluar: no vuelve a predecir ni elige nada. En validación también usa las guardadas
+si los dos modelos ya se evaluaron ahí; así se comparan modelos que leen otros arrays de las mismas
+imágenes, por ejemplo con otra resolución.
 """
 
 import argparse
@@ -24,10 +26,24 @@ from rx_torax.training.train import load_split, pick_device, versions
 SPLIT_NAMES = {'val': 'validación', 'test': 'test'}
 
 
+def image_name(path):
+    return path.replace('\\', '/').rsplit('/', 1)[-1]
+
+
 def same_split(first, second, split):
-    return first.resolve() == second.resolve() or all(
-        filecmp.cmp(first / name, second / name, shallow=False)
-        for name in (f'X_{split}.npy', f'y_{split}.npy', f'{split}.csv'))
+    """Mismas imágenes, pacientes y etiquetas, en el mismo orden. Los arrays pueden ser distintos."""
+    if first.resolve() == second.resolve():
+        return True
+    if not filecmp.cmp(first / f'y_{split}.npy', second / f'y_{split}.npy', shallow=False):
+        return False
+    key = lambda data: [(image_name(r['image_path']), r['patient_id'], r['target'])
+                        for r in read_rows(data / f'{split}.csv')]
+    return key(first) == key(second)
+
+
+def same_arrays(first, second, split):
+    return first.resolve() == second.resolve() or filecmp.cmp(first / f'X_{split}.npy', second / f'X_{split}.npy',
+                                                               shallow=False)
 
 
 def saved_scores(model_dir, split, labels):
@@ -105,10 +121,14 @@ def compare(model_dirs, output, names=None, device='auto', split='val'):
                          'la comparación no sería pareada')
     images, labels, indices = load_split(datas[0], split)
     rows = load_rows(datas[0], split, labels)
-    if split == 'test':
+    saved = all((path / f'evaluacion_{split}' / f'predicciones_{split}.csv').is_file() for path in model_dirs)
+    if split == 'test' or saved:
         device = None
         scored = {name: saved_scores(path, split, labels) for name, path in zip(names, model_dirs)}
     else:
+        if not same_arrays(*datas, split):
+            raise ValueError(f'Los modelos leen otros arrays de {SPLIT_NAMES[split]} (por ejemplo, otra resolución): '
+                             f'evaluar {split} con rx-evaluar en los dos y volver a comparar')
         device = pick_device(device)
         scored = {}
         for name, path in zip(names, model_dirs):
