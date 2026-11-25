@@ -115,9 +115,21 @@ class EvaluationTests(unittest.TestCase):
         self.assertEqual(report['intervals_95']['f1_diferencia'], [0.0, 0.0])
         self.assertEqual(report['disagreements'], 0)
         self.assertTrue((self.root / 'comparacion' / 'comparacion_val.png').is_file())
-        other = self.model('b', self.make_data('otros', 1))
-        with self.assertRaisesRegex(ValueError, 'mismo conjunto'):
+        # Mismas imágenes y pacientes con otros arrays, como pasaría con otra resolución.
+        other_data = self.make_data('otros', 1)
+        other = self.model('b', other_data)
+        with self.assertRaisesRegex(ValueError, 'evaluar val'):
             compare([model, other], self.root / 'otra', device='cpu')
+        evaluate(model, 'val', device='cpu')
+        evaluate(other, 'val', device='cpu')
+        report = compare([model, other], self.root / 'otra', ['A', 'B'], device='cpu')
+        self.assertEqual((report['split'], report['device']), ('val', 'None'))
+        self.assertEqual(report['metrics']['B']['auc'],
+                         json.loads((other / 'evaluacion_val' / 'report.json').read_text(encoding='utf-8'))['metrics']['auc'])
+        rows = (other_data / 'val.csv').read_text(encoding='utf-8').replace('val0', 'otro', 1)
+        (other_data / 'val.csv').write_text(rows, encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'mismo conjunto'):
+            compare([model, other], self.root / 'tercera', device='cpu')
 
     def test_compare_on_test_only_reads_saved_predictions(self):
         model = self.model('a')

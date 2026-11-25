@@ -26,9 +26,10 @@
 - [Metodología](#metodología)
 - [Resultados](#resultados)
 - [Estructura del proyecto](#estructura-del-proyecto)
-- [Instalación](#️-instalación)
-- [Uso](#️-uso)
-- [Roadmap](#️-roadmap)
+- [Instalación](#instalación)
+- [Uso](#uso)
+- [Mejoras para el final](#mejoras-para-el-final)
+- [Roadmap](#roadmap)
 - [Autores](#autores)
 - [Licencia](#licencia)
 - [Referencias](#referencias)
@@ -37,35 +38,21 @@
 
 ## Demo
 
-El MVP es un comando de consola: recibe una o más radiografías, las pasa por el modelo ya entrenado y devuelve el puntaje y la clase de cada una, en texto o en JSON. El modelo y cuatro radiografías de ejemplo vienen en el repositorio, así que funciona apenas se instala:
+El MVP es un comando de consola: recibe una o más radiografías, las pasa por el modelo ya entrenado y devuelve el puntaje y la clase de cada una, en texto, JSON o CSV. El modelo y cuatro radiografías de ejemplo vienen en el repositorio, así que funciona apenas se instala:
 
 ```bash
-rx-predecir --json examples/radiografias/00022899_024.png examples/radiografias/00004526_023.png
+rx-predecir examples/radiografias/*.png
 ```
 
-```json
-{
-  "modelo": "models/modelo_b_densenet121_v1",
-  "hallazgo": "Effusion",
-  "umbral": 0.413918,
-  "predicciones": [
-    {
-      "imagen": "examples/radiografias/00022899_024.png",
-      "puntaje": 0.939869,
-      "positivo": true,
-      "clase": "Effusion"
-    },
-    {
-      "imagen": "examples/radiografias/00004526_023.png",
-      "puntaje": 0.345016,
-      "positivo": false,
-      "clase": "sin Effusion"
-    }
-  ]
-}
+```text
+modelo_b_densenet121_v1 · umbral 0.414 (elegido en validación)
+00000643_006.png  0.575  Effusion
+00004526_023.png  0.345  sin Effusion
+00022899_024.png  0.940  Effusion
+00030344_002.png  0.186  sin Effusion
 ```
 
-La primera tiene derrame y el modelo lo detecta. La segunda también tiene derrame, pero el modelo no lo ve: es un falso negativo. Las cuatro de ejemplo se eligieron al azar, una por cada celda de la matriz de confusión ([detalle](examples/radiografias/README.md)).
+Las cuatro se eligieron al azar, una por cada celda de la matriz de confusión: `00022899_024` tiene derrame y el modelo lo detecta; `00004526_023` también tiene, pero el modelo no lo ve; `00000643_006` es una falsa alarma y `00030344_002`, un acierto sin derrame ([detalle](examples/radiografias/README.md)). Con `rx-probar` se prueba lo mismo en el navegador, con un mapa de calor de dónde mira el modelo.
 
 Aciertos y errores del modelo en el test oficial (los cinco casos más seguros de cada celda):
 
@@ -79,7 +66,7 @@ Aciertos y errores del modelo en el test oficial (los cinco casos más seguros d
 
 El derrame pleural es líquido acumulado entre el pulmón y la pared del tórax. En una radiografía se ve como una opacidad en las bases que borra los ángulos entre las costillas y el diafragma. Es uno de los hallazgos más frecuentes en pacientes internados, y una herramienta que marque las radiografías sospechosas podría ayudar a priorizar cuáles revisar primero.
 
-El proyecto entrena una red convolucional para responder una sola pregunta: **¿esta radiografía PA tiene la etiqueta *Effusion* en NIH ChestX-ray14?** Se usó transferencia de aprendizaje con DenseNet121, preentrenada en ImageNet, y se compararon tres formas de armar los datos de entrenamiento (modelos A, B y C). Todo el pipeline es reproducible con semilla fija: preparación, separación por paciente, entrenamiento, evaluación con intervalos de confianza y predicción sobre imágenes nuevas.
+El proyecto entrena una red convolucional para responder una sola pregunta: **¿esta radiografía PA tiene la etiqueta *Effusion* en NIH ChestX-ray14?** Se usó transferencia de aprendizaje con DenseNet121, preentrenada en ImageNet, y se compararon varias formas de armar los datos de entrenamiento (modelos A, B y C). Todo el pipeline es reproducible con semilla fija: preparación, separación por paciente, entrenamiento, evaluación con intervalos de confianza y predicción sobre imágenes nuevas.
 
 **Resultado principal:** el modelo final (B) obtiene **F1 0,744** (IC 95%: 0,726 a 0,761) y AUC 0,869 en una submuestra del test oficial de NIH con 40% de positivas, evaluada una sola vez. Supera la referencia sin IA (F1 0,571) pero no llega al 0,80 que la consigna da como ejemplo. Un experimento posterior (modelo C) llegó a 0,784 en otro test, sin que la mejora sea significativa.
 
@@ -96,36 +83,24 @@ Es un prototipo académico: no diagnostica, y con la proporción real de derrame
 | **Actuators** (actuadores) | Puntaje y clase por imagen, en consola, JSON o CSV. |
 | **Sensors** (sensores) | El archivo de imagen, leído en escala de grises y llevado a 224×224 sin deformar. |
 
-Propiedades del entorno, con las seis dimensiones de clase (slides 07, pp. 42-48):
+El entorno es parcialmente observable, determinista, episódico, estático y de un solo agente; en uso, el modelo es un agente reactivo simple con la regla "si el puntaje es ≥ 0,414, Effusion". Cada dimensión está justificada en [metodología](docs/METODOLOGIA.md#el-problema-como-agente).
 
-| Dimensión | Entorno | Por qué |
-|---|---|---|
-| Observabilidad | Parcialmente observable | Una sola proyección a 224×224, sin historia clínica y con etiquetas ruidosas |
-| Determinismo | Determinista | La misma imagen da siempre el mismo puntaje; la incertidumbre está en las etiquetas |
-| Episodicidad | Episódico | Cada estudio se decide solo y no condiciona al siguiente |
-| Dinamismo | Estático | La imagen no cambia mientras el agente decide |
-| Continuidad | Percepción continua, acción discreta | Píxeles y puntaje continuos; la decisión tiene dos clases |
-| Agentes | Individual | No hay otros agentes en el entorno |
-
-Es un agente que aprende durante el entrenamiento (p. 54); en uso es un agente reactivo simple (p. 50), con la regla "si el puntaje es ≥ 0,414, Effusion".
-
-**Origen y naturaleza de los datos.** NIH ChestX-ray14: 112.120 radiografías frontales de 30.805 pacientes, con 14 hallazgos etiquetados por procesamiento de lenguaje natural sobre los informes. Se usan solo las 67.298 PA válidas. Los sesgos y la limpieza se describen en [El dataset](#el-dataset) y [Metodología](#metodología).
+**Origen y naturaleza de los datos.** NIH ChestX-ray14: 112.120 radiografías frontales de 30.805 pacientes, con 14 hallazgos etiquetados por procesamiento de lenguaje natural sobre los informes. Se usan solo las 67.298 PA válidas (ver [El dataset](#el-dataset)).
 
 **Métricas de éxito y baseline.**
-- **Métrica principal:** F1-Score de la clase positiva. La consigna lo da como ejemplo; lo elegimos porque, con 40% de positivos, no se infla como la exactitud.
-- **Costo de los errores:** F1 pesa igual una falsa alarma que un derrame perdido, pero para priorizar estudios perder un derrame es más grave (slides 09, p. 10). Por eso se informa también el recall y un punto de operación con recall ≥ 95%, elegido en validación: umbral 0,136, especificidad 59,5% (en validación).
+- **Métrica principal:** F1-Score de la clase positiva, con IC 95% por paciente. Se informan también el recall y la especificidad, porque para priorizar estudios perder un derrame es más grave que una falsa alarma.
 - **Meta de referencia:** F1 > 0,80, el ejemplo de la consigna.
-- **Baseline sin IA:** hoy se leen todas las radiografías, que equivale a marcarlas todas como positivas: F1 0,571 con 40% de positivos (recall 100%, precisión 40%). Marcarlas todas como negativas da F1 0.
-- **Protocolo:** el umbral y el modelo se eligen en validación; el test se evalúa una sola vez. La época y el modelo se eligen por AUC de validación, que no depende del umbral; con el F1 de validación la elección habría sido la misma (B 0,800, A 0,795).
+- **Baseline sin IA:** hoy se leen todas las radiografías, que equivale a marcarlas todas como positivas: F1 0,571 con 40% de positivos.
+- **Protocolo:** la época, el umbral y el modelo se eligen en validación; el test se evalúa una sola vez.
 
-**Cronología.** La consigna pide el Charter antes de codificar (p. 3). La primera propuesta es del 18/10 (`docs/PLAN_INICIAL.md`) y se rehízo el 21/10. El problema final, *Effusion* con 40% de positivos, se definió el 01/11 después del EDA. A y B se entrenaron y evaluaron el 2 y el 3/11. El F1 como métrica de éxito quedó escrito el 4/11, antes de evaluar el modelo C; el Charter con PEAS se completó el 10/11. Para A y B, el 0,80 se adoptó como referencia después de evaluar; para C se fijó antes.
+Cuándo se fijó cada una y el punto de operación con recall ≥ 95% están en [metodología](docs/METODOLOGIA.md#métricas-de-éxito-y-protocolo).
 
 **Límites del alcance (out of scope).**
 - Vistas AP y laterales, y radiografías de otros equipos u hospitales: el modelo solo se validó con PA de NIH.
 - Más de un hallazgo por imagen (multietiqueta) y localización del derrame en la imagen.
 - DICOM: el lector acepta PNG, JPEG y TIFF.
 - Uso clínico o diagnóstico. No hay validación con radiólogos ni con la proporción real de casos.
-- API, interfaz gráfica, usuarios o base de datos: el MVP es el comando de consola. La página de `docs/` es solo de presentación.
+- API, usuarios o base de datos: el MVP es el comando de consola, y `rx-probar` es una página local para probarlo.
 
 ### Contexto académico
 
@@ -157,17 +132,7 @@ Es un agente que aprende durante el entrenamiento (p. 54); en uso es un agente r
 | Período / cobertura | Estudios de 1992 a 2015 del NIH Clinical Center (EE. UU.); CSV `Data_Entry_2017_v2020.csv` |
 | Licencia del dataset | Uso libre, con atribución: enlace al sitio del NIH, cita del paper y reconocimiento al NIH Clinical Center |
 
-La descarga pesa unos 42 GB y no está en el repositorio. Para reproducir el entrenamiento, descargar del enlace de Box y dejar en `data/raw/nih/`:
-
-```text
-data/raw/nih/
-├── Data_Entry_2017_v2020.csv
-├── train_val_list.txt
-├── test_list.txt
-└── images_001/ a images_012/     # los 12 archivos images_*.tar.gz descomprimidos
-```
-
-El preparador busca cada imagen por nombre dentro de `data/raw/nih/`, así que la estructura de subcarpetas no importa. La guía completa está en [preparación de datos](docs/PREPARAR_DATOS.md).
+La descarga pesa unos 42 GB y no está en el repositorio. Para entrenar, se baja de Box y se deja en `data/raw/nih/` el CSV, las listas `train_val_list.txt` y `test_list.txt` y las 12 carpetas `images_*`; la guía está en [preparación de datos](docs/PREPARAR_DATOS.md). Para recalcular los resultados o predecir no hace falta.
 
 **Sesgos y limitaciones conocidas:**
 - **Etiquetas con ruido:** salen de procesar informes con NLP, no de un radiólogo mirando la imagen. Varios falsos positivos del modelo parecen derrames reales etiquetados como otra cosa.
@@ -181,74 +146,18 @@ El preparador busca cada imagen por nombre dentro de `data/raw/nih/`, así que l
 
 ```mermaid
 flowchart LR
-    A[CSV + 112.120 PNG<br/>NIH ChestX-ray14] --> B[Solo PA<br/>auditoría y duplicados]
-    B --> C[Split por paciente<br/>test oficial de NIH]
-    C --> D[40% positivas<br/>en cada conjunto]
-    D --> E[224×224 sin deformar<br/>media y desvío de train]
-    E --> F[DenseNet121<br/>ImageNet, 1 salida]
-    F --> G[Validación<br/>época y umbral]
-    G --> H[Test<br/>una sola vez]
-    G --> I[rx-predecir<br/>texto, JSON o CSV]
+    A[NIH ChestX-ray14] --> B[Solo PA, sin duplicados] --> C[Split por paciente] --> D[40% positivas]
+    D --> E[224×224, z-score de train] --> F[DenseNet121] --> G[Validación: época y umbral] --> H[Test, una vez]
 ```
 
-### Análisis exploratorio
+1. **Limpieza:** solo PA (se excluyen 44.810 AP) y sin duplicados por hash de píxeles. Quedan 67.298 radiografías.
+2. **Separación por paciente:** test es la lista oficial de NIH; validación, el 15% de los pacientes de `train_val`. Ningún paciente se repite entre conjuntos.
+3. **40% de positivas** en train, validación y test, por pedido del profesor: todas las positivas y negativas al azar con semilla fija (65% sin hallazgos y 35% con otros, máximo 3 por paciente).
+4. **Transformación:** grises, 224×224 sin deformar y z-score con la media y el desvío de train. Aumento de datos solo en train: rotación, escala y desplazamiento leves, sin espejar.
+5. **Modelo:** DenseNet121 preentrenada en ImageNet, con una sola salida. Pérdida BCE, AdamW (lr 1e-4), lotes de 32 y early stopping por AUC de validación.
+6. **Validación y test:** validación elige la época, el umbral (máximo F1) y el modelo; test se evalúa una sola vez. Intervalos por bootstrap de pacientes y comparaciones pareadas con α = 0,05.
 
-- **Pacientes:** el 84% de las radiografías es de pacientes con más de un estudio, y las de una misma persona se parecen. Por eso se separa por paciente.
-- **Desbalance:** solo el 9,8% de las PA tiene Effusion (15,8% en el test oficial); entropía de Shannon 0,46 e índice de Gini 0,18 (slides 05, p. 7). Por pedido del profesor, train, validación y test tienen 40% de positivos (Shannon 0,97, Gini 0,48). En clase se balancea solo train (slides 06, pp. 29, 31 y 35), así que precisión y F1 salen más altos que con la proporción real: ver [Resultados](#resultados).
-- **Vistas:** 44.810 radiografías son AP. Suelen ser placas portátiles de pacientes en cama. Con las medidas de asociación de clase (slides 04, p. 47), la vista casi no se asocia con Effusion (φ = 0,08, despreciable) pero sí con tener 10 o más estudios previos (φ = 0,28, débil): son otra población, así que se excluyeron.
-- **Primer intento descartado:** con *Pneumothorax* había 3,6% de positivos en train y 13,9% en test, demasiado pocos. Se cambió a *Effusion* ([resumen](docs/SPLITS_NIH_PNEUMOTHORAX.md)).
-- **Archivos:** al auditar la descarga apareció una carpeta `images_010` que era copia de otra; se volvió a bajar.
-- **Edad y sexo:** parecidos entre positivas y negativas (edad media 51 contra 47 años en train; 54–55% hombres en los dos grupos). Correlación punto biserial de la edad 0,15 (débil) y φ del sexo 0,005 (despreciable): no se balancea por ellas.
-- **Estudios previos:** punto biserial 0,25 con Effusion en train (moderada). Es un posible atajo, que después se midió en el modelo.
-- **Dispositivos:** en una muestra revisada a ojo, se ven cables o catéteres en ~30% de las positivas y ~13% de las negativas.
-- **Faltantes y outliers:** el CSV no tiene faltantes (0 en las 11 columnas). Con IQR y ±3σ (slides 04, pp. 50-51) sobre el brillo y el contraste de cada imagen de train se marcan placas lavadas, sobreexpuestas o con bordes negros, en proporción parecida en las dos clases: son placas legítimas y se conservan. Apareció un solo error, una placa lateral etiquetada como PA (`00008347_002.png`, negativa de train), que quedó documentado.
-
-Todo este análisis, con sus tablas y gráficos y la decisión que sale de cada uno, está en el notebook [`00_eda_nih_effusion.ipynb`](notebooks/00_eda_nih_effusion.ipynb), que se ve con sus resultados directamente en GitHub. El detalle de los conjuntos está en [train, validación y test](docs/SPLITS_NIH_EFFUSION.md).
-
-### Decisiones y la estadística que las respalda
-
-| Decisión | Estadística que la respalda | Notebook 00 |
-|---|---|---|
-| Separar por paciente | El 84% de las radiografías es de pacientes con más de un estudio | Sección 1 |
-| Usar solo PA | Vista AP × Effusion: φ = 0,08, despreciable. Vista AP × 10 o más estudios previos: φ = 0,28, débil. AP es otra población, no un problema de prevalencia | Sección 3 |
-| Effusion como hallazgo | 6.589 positivas PA, la segunda cantidad después de Infiltration (9.353), que es una etiqueta poco específica. Pneumothorax se descartó: 3,6% de positivas en train contra 13,9% en test | Sección 4 |
-| 40% de positivas en los tres conjuntos | Pedido del profesor. La proporción real es 9,8% (Shannon 0,46, Gini 0,18); con 40%, Shannon 0,97 y Gini 0,48. Con la proporción real, el F1 de B sería 0,34 | Secciones 2 y 6 |
-| Negativas: 65% sin hallazgos y 35% con otros | Es la mezcla de las negativas PA: 64,7% en todas, 67,1% solo en `train_val` | Sección 5 |
-| Máximo 3 negativas por paciente | El 14% de los pacientes aporta el 47% de las negativas: sin tope, pocos pacientes dominarían la clase | Sección 5 |
-| No balancear por edad ni sexo | Edad × Effusion: punto biserial 0,15, débil. Sexo × Effusion: φ = 0,005, despreciable (p = 0,60) | Sección 7 |
-| Vigilar los estudios previos como atajo | Estudios previos × Effusion: punto biserial 0,25, moderada; Spearman 0,32. Solos separan las clases con AUC 0,68 | Sección 7 |
-| Cortes de estudios previos 0 / 1-9 / 10 o más | Cortes fijos por dominio; 10 queda justo por encima del tercer cuartil de las positivas de train (9) | Sección 7 |
-| Conservar los outliers de imagen | Con IQR, el contraste marca 7,5% de las positivas y 7,9% de las negativas: proporción parecida, placas legítimas | Sección 8 |
-| Edad con media; estudios previos con mediana e IQR | Asimetría de la edad −0,28 (simétrica); de los estudios previos 4,24 (muy asimétrica) | Sección 1 |
-| Validación = 15% de los pacientes de `train_val` | 1.813 imágenes con 725 positivas: alcanza para elegir época y umbral (IC del F1 de ±0,03) sin restarle mucho a train | `configs/nih.json` |
-| z-score con media 0,511 y desvío 0,263 | Calculados solo con los píxeles de train y aplicados igual al resto | `preprocessing.json` |
-| Época de cada modelo | Máximo AUC de validación; se corta tras 4 épocas sin mejora | `historial.csv` |
-| Umbral 0,414 | Máximo F1 en validación (0,800, contra 0,798 con 0,5) | `report.json` |
-| Modelo B sobre A | Mayor AUC de validación (0,905 contra 0,898); la diferencia no es significativa con α = 0,05 | `comparacion_val_a_b` |
-| Intervalos por paciente | En test hay 2,6 imágenes por paciente: no son observaciones independientes | `evaluate.py` |
-
-De qué slide o notebook de la cátedra sale cada decisión, y en qué se aparta, está en [relación con el material de clase](docs/TRAZABILIDAD_CLASES.md).
-
-### Preprocesamiento
-
-1. **Limpieza:** de 112.120 filas se excluyen 44.810 AP y 12 duplicadas por hash de píxeles: 3 copias exactas del mismo paciente (se conserva una) y 9 entre pacientes distintos (se excluyen todas). Quedan 67.298 PA.
-2. **Separación por paciente:** test es la lista oficial de NIH. Validación es el 15% de los pacientes de `train_val_list.txt`. Ningún paciente ni imagen se repite entre conjuntos.
-3. **40% de positivas:** se usan todas las positivas y se eligen negativas al azar con semilla fija: 65% sin hallazgos y 35% con otros, y como máximo 3 por paciente. La mezcla y el tope se aplicaron en los tres conjuntos, y el 65% se tomó de todas las negativas PA, test incluido (solo con `train_val` da 67%). En clase, lo que se calcula sale de train y en test solo se aplica (slides 06, pp. 30-31): el efecto sobre los resultados está en [Resultados](#resultados).
-4. **Transformación:** escala de grises, 224×224 conservando la proporción con bordes negros (interpolación bilineal de Pillow, que suaviza al reducir), valores en [0, 1]. La media (0,511) y el desvío (0,263) se calculan **solo con train** (slides 10, p. 22) y se aplican igual a validación, test e imágenes nuevas. Se estandariza en lugar de dejar [0, 1], que es lo que sugiere slides 06 p. 19 para redes neuronales, porque la DenseNet121 preentrenada espera entradas centradas; se usan las estadísticas de train y no las de ImageNet porque las radiografías tienen otra distribución. No se aplican filtros de ruido: la red aprende sus propios filtros, y suavizar podría borrar detalles de los ángulos costofrénicos.
-5. **Aumento de datos, solo en train:** rotación ±7°, escala ±5% y desplazamiento ±5%. Sin espejar, porque el corazón está a la izquierda.
-
-### Modelo(s)
-
-**DenseNet121 preentrenada en ImageNet**, con la última capa reemplazada por una sola salida. Es la arquitectura de CheXNet, un trabajo de referencia sobre este mismo dataset, y la transferencia de aprendizaje permite entrenar con 7.252 a 22.594 imágenes en lugar de millones.
-
-- **Por qué una CNN y no los clasificadores de clase:** KNN, SVM o árboles (slides 01, p. 47) sobre píxeles tendrían 50.176 valores por imagen, no toleran desplazamientos y comparar contra todo train es costoso. Las redes y las CNN están en el programa de la materia (slides 00, p. 8). No se probó otra red porque cada entrenamiento lleva de 30 a 79 minutos y el cómputo se usó para comparar cómo armar train.
-- **Parámetros contra datos:** DenseNet121 tiene unos 7 millones de parámetros, muchos más que imágenes de train, al revés del criterio de slides 09, p. 28. Lo compensan partir de los pesos de ImageNet, el aumento de datos y el early stopping; aun así sobreajusta rápido (mejor época entre la 1 y la 4).
-
-Entrenamiento: pérdida BCE, AdamW (lr 1e-4, weight decay 1e-4), lotes de 32, hasta 15 épocas con early stopping por AUC de validación (paciencia 4). El learning rate se multiplica por 0,3 cuando el AUC de validación no mejora en dos épocas seguidas. Semilla 42 en el split, la inicialización y el aumento de datos.
-
-Los hiperparámetros no se buscaron comparando en validación, como se hace en clase (slides 09, p. 38): son valores habituales para ajustar redes preentrenadas, con un learning rate chico para no pasarse del mínimo (slides 08, pp. 25-26), y una búsqueda habría multiplicado entrenamientos de 30 a 79 minutos. Lo que sí se elige en validación es la época y el umbral.
-
-Se compararon tres formas de llegar a 40% de positivas en train:
+Se compararon cuatro formas de llegar a 40% de positivas en train:
 
 | Modelo | Train | Por qué | Tiempo |
 |---|---|---|---|
@@ -259,19 +168,13 @@ Se compararon tres formas de llegar a 40% de positivas en train:
 
 Tiempos en una Mac M4 con MPS. Configuraciones en [`configs/`](configs/).
 
-### Validación
-
-- **Train** ajusta los pesos; **validación** elige la época, el umbral (maximizando F1) y el modelo final; **test** se usa una sola vez con todo fijado. `rx-evaluar` se niega a evaluar dos veces el mismo conjunto.
-- **Validación única, no k-fold:** cada entrenamiento tarda de 30 a 79 minutos; con 5 folds por paciente serían de 2,5 a 6,5 horas por modelo. Con procesos lentos y datos grandes conviene una sola validación (slides 09, p. 46). La contracara es que depende de la partición (p. 39), y se vio: la validación, sacada de `train_val`, no anticipó la población del test oficial.
-- **Intervalos de confianza:** bootstrap de 2.000 remuestreos **por paciente**, porque las imágenes de un mismo paciente no son independientes. Miden la incertidumbre del conjunto evaluado, no la variación entre entrenamientos: hay una sola corrida por modelo.
-- **Comparaciones como test de hipótesis** (slides 04, pp. 11-12 y 19): H0 dice que la diferencia entre dos modelos es 0 y H1 que no lo es, con α = 0,05 fijado de antemano. Se rechaza H0 si el IC 95% pareado de la diferencia no incluye el 0. Si lo incluye, no hay evidencia suficiente de una diferencia, lo que no prueba que los modelos sean iguales.
-- **Decisión previa:** antes de abrir el test se eligió B, por tener el mayor AUC de validación. A no se evaluó en test para que el resultado no influyera en la elección. La decisión se versionó junto con los resultados; el orden consta en los reportes: la comparación A-B es de las 13:19 UTC del 3/11 y la evaluación de test, de las 13:26.
+Por qué se tomó cada decisión, con la estadística que la respalda, está en [metodología y decisiones](docs/METODOLOGIA.md): análisis exploratorio, tabla de decisiones, preprocesamiento, elección de la red y de la validación. El EDA completo está en el notebook [`00_eda_nih_effusion.ipynb`](notebooks/00_eda_nih_effusion.ipynb), y la relación con el material de clase, en [trazabilidad](docs/TRAZABILIDAD_CLASES.md).
 
 ---
 
 ## Resultados
 
-Modelo B en una **submuestra del test oficial de NIH**: 4.390 radiografías de 1.686 pacientes, con todas las positivas PA de la lista oficial y negativas elegidas como en train (40% de positivas, 65% de negativas sin hallazgos, máximo 3 por paciente). Umbral 0,414, fijado en validación.
+Modelo B en una **submuestra del test oficial de NIH**: 4.390 radiografías de 1.686 pacientes, con todas las positivas PA de la lista oficial y negativas elegidas como en train (40% de positivas, 65% de negativas sin hallazgos, máximo 3 por paciente). Umbral 0,414, fijado en validación. Todas las cifras de esta sección se recalculan sin NIH con `rx-recalcular` (ver [Uso](#3-recalcular-los-resultados-sin-nih)).
 
 | Métrica | Baseline: siempre positivo | Modelo final (B) |
 |---|---|---|
@@ -295,24 +198,14 @@ F1 de todos los modelos (validación es optimista porque ahí se eligieron la é
 | C | Test nuevo (1.313 imágenes) | 0,784 (0,736 a 0,823) | 0,897 |
 | Siempre positivo | Cualquiera con 40% de positivos | 0,571 | 0,500 |
 
-**Análisis crítico:**
-
+**Lectura de los resultados:**
 - **El modelo aprende algo real:** AUC 0,87 en pacientes que nunca vio, y el intervalo del F1 queda entero por encima del baseline.
-- **No alcanza el 0,80 que la consigna da como ejemplo.** En validación B daba justo 0,800, pero en test cae a 0,744. La especificidad baja de 81% a 62%: el modelo da muchas falsas alarmas.
-- **Parte de la caída se explica por la población.** El test oficial tiene muchos más pacientes con 10 o más estudios previos, y ahí la especificidad es 35%. Con la mezcla de validación, la especificidad de test sería 69% en vez de 62%; el resto es una caída dentro de cada grupo.
-- **El modelo usa en parte la señal "paciente internado".** El número de estudios previos solo, sin mirar la imagen, ya separa las clases con AUC 0,73. Medido con la correlación de Spearman (slides 03, p. 50): entre las negativas, el puntaje sube con los estudios previos (ρ = 0,49, IC 95% 0,45 a 0,52, en test; 0,26 en validación); entre las positivas no hay relación (ρ = −0,03, IC −0,08 a 0,03).
-- **A contra B:** no se detectó una diferencia significativa en F1 ni en AUC (los IC de la diferencia incluyen el 0). B detecta más (recall +4,1 puntos) a cambio de más falsos positivos.
-- **El modelo C confirmó la hipótesis a medias.** Entrenar con negativas parecidas a las del test bajó los falsos positivos de forma significativa (−26, especificidad +3,3 puntos), pero el F1 no mejoró de forma significativa (0,784 contra 0,775 del control). Con AUC ~0,90, ni el mejor umbral posible pasa de 0,80: hace falta un modelo que separe mejor.
-- **El F1 depende de la proporción de positivos.** Con el mismo recall y especificidad, en la proporción real de NIH PA (9,8%) el F1 sería 0,34 y la precisión 21%: 4 de cada 5 alarmas serían falsas. Sirve, como mucho, para priorizar estudios. Además, 0,414 es el umbral óptimo para 40% de positivos: con 9,8%, reponderando validación, el óptimo sería ~0,77. Se elegiría así, en validación, nunca con test.
-- **El test preparado es más fácil que el oficial completo.** Sus negativas son 65% sin hallazgos y con máximo 3 por paciente; en el test oficial son 51% y sin tope. Reponderando la especificidad de B por grupo a la mezcla natural (análisis posterior, sin cambiar el modelo ni el umbral):
+- **No alcanza el 0,80.** En validación B daba 0,800 y en test cae a 0,744: la especificidad baja de 81% a 62%. Parte de la caída es la población del test oficial, con muchos más pacientes con 10 o más estudios previos.
+- **Usa en parte la señal "paciente internado":** entre las negativas, el puntaje sube con los estudios previos (Spearman 0,49 en test); entre las positivas no hay relación.
+- **El modelo C bajó los falsos positivos** de forma significativa (26 menos), pero su F1 (0,784) no es significativamente mayor que el del control (0,775).
+- **El F1 depende de la proporción de positivos:** con la real de NIH (9,8%) sería 0,34, y 4 de cada 5 alarmas serían falsas. Sirve, como mucho, para priorizar estudios.
 
-| Mezcla de negativas | Especificidad | F1 con 40% de positivos | F1 con 15,8% |
-|---|---|---|---|
-| Test preparado | 61,8% | 0,744 | 0,470 |
-| Natural, por tipo de negativa | 58,7% | 0,730 | 0,451 |
-| Natural, por tipo y estudios previos | 54,2% | 0,711 | 0,426 |
-
-El análisis completo está en [resultados de A y B](docs/RESULTADOS_MODELOS.md), [modelo C](docs/MODELO_C.md) y el [informe en PDF](docs/Informe_proceso_Effusion.pdf).
+El análisis completo está en [metodología](docs/METODOLOGIA.md#análisis-crítico-de-los-resultados), [resultados de A y B](docs/RESULTADOS_MODELOS.md), [modelo C](docs/MODELO_C.md) y el [informe en PDF](docs/Informe_proceso_Effusion.pdf).
 
 ---
 
@@ -320,34 +213,21 @@ El análisis completo está en [resultados de A y B](docs/RESULTADOS_MODELOS.md)
 
 ```text
 .
-├── README.md
-├── LICENSE
-├── .github/workflows/          # Integración continua: pruebas y rx-predecir en cada push
-├── .env.example                # Variables de entorno opcionales, sin claves (no hace falta ninguna)
-├── pyproject.toml              # Paquete, dependencias fijadas y comandos rx-*
-├── requirements.txt            # Entorno exacto del entrenamiento, con dependencias indirectas
-├── configs/                    # JSON de preparación (nih*.json) y de entrenamiento (modelo_*.json)
-├── data/                       # Fuera de git
-│   ├── raw/                    # NIH descargado
-│   └── processed/              # Arrays X/y, CSV y reportes de cada preparación
-├── models/
-│   └── modelo_b_densenet121_v1/  # Modelo final: modelo.pt, reportes de entrenamiento y test
-├── src/rx_torax/               # Código fuente
-│   ├── data/                   # Lectura de metadatos, auditoría y split por paciente
-│   ├── preprocessing/          # Lectura de imágenes y transformación
-│   ├── training/               # DenseNet121 y entrenamiento
-│   ├── evaluation/             # Métricas, bootstrap, evaluación y comparación
-│   ├── inference/              # rx-predecir
-│   ├── prepare.py              # rx-preparar
-│   └── demo.py                 # Datos sintéticos para probar el flujo
-├── notebooks/                  # EDA de NIH, preparación y pruebas en notebooks
-├── tests/                      # Pruebas automáticas (unittest)
-├── scripts/                    # flujo_completo.sh y preparar.ps1
-├── examples/                   # 4 radiografías de ejemplo y carga de arrays
-└── docs/                       # Página de GitHub Pages, informe, figuras y documentación
+├── pyproject.toml          # Paquete, dependencias fijadas y comandos rx-*
+├── requirements.txt        # Entorno exacto del entrenamiento (macOS arm64, Python 3.11)
+├── configs/                # JSON de preparación y entrenamiento, y SHA-256 de los datos preparados
+├── data/                   # Fuera de git: NIH descargado (raw/) y preparaciones (processed/)
+├── models/                 # Predicciones y reportes de A, B, control y C; pesos del modelo final (B)
+├── src/rx_torax/           # Código: data/, preprocessing/, training/, evaluation/ e inference/
+├── notebooks/              # EDA de NIH, preparación y pruebas
+├── tests/                  # Pruebas automáticas (unittest)
+├── scripts/                # flujo_completo.sh y preparar.ps1
+├── examples/               # 4 radiografías de ejemplo y carga de arrays
+├── docs/                   # Página de GitHub Pages, informe, figuras y documentación
+└── .github/workflows/      # Integración continua en cada push
 ```
 
-El resto de los modelos (A, control y C) y los datos preparados quedan fuera de git porque pesan varios GB; se regeneran con los comandos de [Uso](#️-uso). Las ramas y la organización del trabajo están en [organización](docs/ORGANIZACION.md).
+En git están los pesos del modelo final (B), y las predicciones y los reportes de los cuatro modelos, así que los resultados se recalculan sin NIH. Los pesos de A, control y C (28 MB cada uno) están en el release [`pesos-v1`](https://github.com/Marcouzis11/iaproyecto/releases/tag/pesos-v1), para no hacer pesado cada clon, y se bajan con `rx-descargar-pesos`. Los datos preparados quedan fuera de git porque pesan varios GB. Las ramas y la organización del trabajo están en [organización](docs/ORGANIZACION.md).
 
 ---
 
@@ -358,8 +238,6 @@ El resto de los modelos (A, control y C) y los datos preparados quedan fuera de 
 - Python 3.11, 3.12 o 3.13
 - Git
 - Unos 2 GB libres para las dependencias (PyTorch). Para entrenar, además, 45 GB para NIH y 10 GB para los datos preparados.
-
-Instalación verificada desde cero en macOS (Apple M4, Python 3.11) y en Windows 11 (Python 3.13): las pruebas pasan y `rx-predecir` da los mismos puntajes en los dos sistemas.
 
 ### Pasos
 
@@ -378,21 +256,15 @@ source .venv/bin/activate         # Windows (PowerShell): .venv\Scripts\Activate
 python -m pip install -e .
 ```
 
-Para reproducir el entorno exacto del entrenamiento, incluidas las dependencias indirectas, usar `python -m pip install -r requirements.txt -e .` en el paso 4. Para abrir los notebooks: `python -m pip install -e ".[notebooks]"`.
+**De dónde sale cada lista de versiones.** `pyproject.toml` fija las cinco dependencias directas y es lo que instala el paso 4, en cualquier sistema. `requirements.txt` es el entorno exacto donde se entrenaron y evaluaron los modelos, con las dependencias indirectas: se generó en **macOS arm64 (Apple M4) con Python 3.11**, como indica su primera línea. Para reproducir ese entorno, el paso 4 es `python -m pip install -r requirements.txt -e .`. Para los notebooks, `python -m pip install -e ".[notebooks]"`.
 
-**Con [uv](https://docs.astral.sh/uv/):** en el paso 2, `uv venv --python 3.11`; en el paso 4, `uv pip install -r requirements.txt -e .`. La activación es la misma. Verificado en Windows 11 con Python 3.13: instala sin errores, pasan las pruebas y `rx-predecir` da los puntajes documentados.
+Instalación verificada desde cero en macOS (Apple M4, Python 3.11) y en Windows 11 (Python 3.13), con `pip` y con [uv](https://docs.astral.sh/uv/) (`uv venv --python 3.11` y `uv pip install -r requirements.txt -e .`): las pruebas pasan y `rx-predecir` da los mismos puntajes en los dos sistemas.
 
-**Variables de entorno:** no hace falta ninguna. Todas las rutas y parámetros están en los JSON de `configs/`. [`.env.example`](.env.example) lista las opcionales que leen Python y PyTorch (codificación de la salida, caché de pesos, GPU), sin claves. El dispositivo se elige solo (CUDA, MPS de Apple o CPU) y se puede forzar con `--dispositivo cpu`.
+**Variables de entorno:** no hace falta ninguna; las rutas y parámetros están en `configs/`. [`.env.example`](.env.example) lista las opcionales de Python y PyTorch, sin claves. El dispositivo se elige solo (CUDA, MPS o CPU) y se fuerza con `--dispositivo cpu`.
 
-**Comprobar la instalación:**
+**Comprobar la instalación:** `python -m unittest discover -s tests` corre 65 pruebas en alrededor de un minuto, sin el dataset: usan datos sintéticos, el modelo final con las radiografías de ejemplo y las predicciones versionadas ([detalle](docs/VALIDACION.md)).
 
-```bash
-python -m unittest discover -s tests
-```
-
-Corre 48 pruebas en alrededor de un minuto, sin necesitar el dataset: usan datos sintéticos, salvo las de `tests/test_examples.py`, que pasan el modelo final por las cuatro radiografías de ejemplo y comprueban los puntajes documentados.
-
-**Integración continua:** en cada push y pull request, GitHub Actions instala el proyecto con las versiones fijadas, corre estas pruebas y ejecuta `rx-predecir` sobre las cuatro radiografías de ejemplo, comprobando que cada una dé la clase documentada y que un archivo que no es imagen termine con error. Corre en Ubuntu con Python 3.11 y en Windows con Python 3.13 ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)).
+**Integración continua:** en cada push y pull request, GitHub Actions instala el proyecto con las versiones fijadas, baja los pesos publicados, corre estas pruebas, recalcula con `rx-recalcular` todos los resultados y ejecuta `rx-predecir` con los cuatro modelos sobre las radiografías de ejemplo. Corre en Ubuntu con Python 3.11 y en Windows con Python 3.13 ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)).
 
 ---
 
@@ -403,45 +275,59 @@ Con el entorno activado, desde la raíz del repositorio.
 ### 1. Predecir sobre radiografías nuevas (MVP)
 
 ```bash
-rx-predecir examples/radiografias/*.png
+rx-predecir --json examples/radiografias/00022899_024.png
+```
+
+- Sin `--json` imprime una línea por imagen (ver [Demo](#demo)); con `--json`, el modelo, el umbral y, por imagen, el puntaje, si es positiva y la clase. `--salida archivo.csv` lo guarda en CSV.
+- Acepta PNG, JPEG y TIFF. Si un archivo no se puede leer, termina con un mensaje `error:` y código 1.
+- `--modelo` permite usar otro modelo; por defecto usa `models/modelo_b_densenet121_v1`.
+- Solo tiene sentido con radiografías de tórax PA.
+
+### 2. Probar el modelo en el navegador
+
+```bash
+rx-probar
+```
+
+Abre una página local (http://127.0.0.1:8765) donde se arrastran radiografías y se ve, para cada una, el puntaje, la clase y un mapa de calor (Grad-CAM) con las zonas que más empujan el puntaje hacia derrame. Un control permite mover el umbral y ver cómo cambia la decisión. Todo corre en la computadora: las imágenes no se suben a internet. Usa la misma transformación y el mismo umbral que `rx-predecir`; `--puerto` cambia el puerto y `--no-abrir` evita abrir el navegador.
+
+### 3. Recalcular los resultados sin NIH
+
+```bash
+rx-recalcular
 ```
 
 ```text
-modelo_b_densenet121_v1 · umbral 0.414 (elegido en validación)
-00000643_006.png  0.575  Effusion
-00004526_023.png  0.345  sin Effusion
-00022899_024.png  0.940  Effusion
-00030344_002.png  0.186  sin Effusion
+modelo_b_densenet121_v1 · test · 4390 imágenes · F1 0.744 (0.726 a 0.761) · AUC 0.869 · recall 93.1% · especificidad 61.8% · coincide
+10 de 10 resultados coinciden con sus report.json.
 ```
 
-- `--json` imprime el resultado como JSON (ver [Demo](#demo)); `--salida archivo.csv` lo guarda en CSV.
-- Acepta PNG, JPEG y TIFF. Si un archivo no se puede leer, termina con un mensaje `error:` y código 1.
-- `--modelo` permite usar otro modelo entrenado; por defecto usa `models/modelo_b_densenet121_v1`.
-- Solo tiene sentido con radiografías de tórax PA.
+Cada evaluación guarda una fila por imagen en `models/<modelo>/evaluacion_<conjunto>/predicciones_<conjunto>.csv`: nombre, paciente, etiqueta, puntaje y decisión. `rx-recalcular` rehace con esos CSV las métricas, los intervalos por paciente y las comparaciones pareadas, con el mismo código que `rx-evaluar` y `rx-comparar`, y termina con error si algún número no coincide con su `report.json`. Son 7 evaluaciones (A, B, control y C en validación; B, control y C en test, porque se eligió B antes de abrirlo) y 3 comparaciones. Para otros cortes, como edad o sexo, se cruzan los CSV por nombre de imagen con `Data_Entry_2017_v2020.csv` de NIH (9 MB).
 
-### 2. Probar el flujo completo sin descargar el dataset
+### 4. Usar los modelos A, control y C
 
 ```bash
-scripts/flujo_completo.sh demo
+rx-descargar-pesos
+rx-predecir --modelo models/modelo_c_v2_densenet121 examples/radiografias/*.png
 ```
 
-Genera 120 imágenes **sintéticas**, las prepara, entrena 2 épocas en CPU, evalúa en validación y test, y predice. Tarda menos de un minuto. Prueba que el código corre de punta a punta; con datos al azar el modelo no aprende nada, y es lo esperable. En Windows, correrlo desde Git Bash.
+Baja los pesos del release `pesos-v1`, verifica su SHA-256 y los deja en `models/<modelo>/modelo.pt`. Con eso, `rx-predecir --modelo` y `rx-probar --modelo` funcionan con cualquiera de los cuatro modelos.
 
-### 3. Reproducir los resultados con NIH
-
-Con el dataset en `data/raw/nih/` (ver [El dataset](#el-dataset)), el modelo final se reproduce con un solo comando:
+### 5. Entrenar y evaluar
 
 ```bash
-scripts/flujo_completo.sh nih     # preparar, entrenar B, evaluar val y test y predecir
+scripts/flujo_completo.sh demo    # sin NIH: 120 imágenes sintéticas, de punta a punta en menos de un minuto
+scripts/flujo_completo.sh nih     # con NIH en data/raw/nih/: preparar, entrenar B, evaluar val y test y predecir
 ```
 
-El modelo nuevo queda en `models/reproduccion_modelo_b`, sin pisar el versionado. Paso por paso, y para los demás modelos:
+El modo demo prueba que el código corre; con datos al azar el modelo no aprende nada, y es lo esperable. El modo NIH deja el modelo en `models/reproduccion_modelo_b`, sin pisar el versionado. En Windows, correrlos desde Git Bash. Paso por paso, y para los demás modelos:
 
 | Paso | Comando |
 |---|---|
 | Preparar datos de A | `rx-preparar --config configs/nih.json` |
 | Preparar datos de B | `rx-preparar --config configs/nih_modelo_b.json` |
 | Preparar control y C | `rx-preparar --config configs/nih_v2_control.json` y `configs/nih_v2_c.json` |
+| Verificar que los datos de B sean los del equipo | `rx-verificar-datos data/processed/nih_effusion_pa_modelo_b_v1` |
 | Entrenar | `rx-entrenar --config configs/modelo_b.json --salida models/otro_nombre` (o `modelo_a`, `modelo_control_v2`, `modelo_c_v2`) |
 | Evaluar en validación | `rx-evaluar --modelo models/otro_nombre --conjunto val` |
 | Comparar dos modelos | `rx-comparar --modelos models/x models/y --nombres X Y --salida models/comparacion` |
@@ -449,17 +335,23 @@ El modelo nuevo queda en `models/reproduccion_modelo_b`, sin pisar el versionado
 
 Cada comando guarda un `report.json` con la configuración, las versiones de las librerías y las métricas. Con la misma semilla, los datos preparados son idénticos; los pesos entrenados en GPU o MPS pueden variar levemente entre corridas, por operaciones no deterministas del hardware.
 
-### 4. Notebooks
+### 6. Notebooks
 
-```bash
-python -m pip install -e ".[notebooks]"
-python -m notebook notebooks/00_eda_nih_effusion.ipynb
-```
+`python -m notebook notebooks/00_eda_nih_effusion.ipynb`, con las dependencias de `.[notebooks]`, abre el análisis exploratorio de NIH, guardado con sus resultados. `01_preparacion_radiografias.ipynb` y `02_pruebas_pipeline.ipynb` hacen la preparación en celdas y la prueban, en modo demo sin el dataset. Ver [notebooks](notebooks/README.md).
 
-- `00_eda_nih_effusion.ipynb`: el análisis exploratorio de NIH, con cada decisión sobre los datos y el gráfico o número que la justifica. Está guardado con sus resultados; para volver a ejecutarlo hacen falta NIH y los datos preparados con `configs/nih.json`.
-- `01_preparacion_radiografias.ipynb` hace la preparación en celdas, y `02_pruebas_pipeline.ipynb` prueba esas funciones. Arrancan en modo demo, sin el dataset.
+---
 
-Ver [notebooks](notebooks/README.md).
+## Mejoras para el final
+
+Cada integrante toma una mejora, la trabaja en su fork y la compara contra el modelo B con los mismos datos y el mismo protocolo:
+
+| Integrante | Mejora | Qué responde |
+|---|---|---|
+| Tiziano Bertorello | Llegar a F1 0,80 | Qué cambio separa mejor las clases sin tocar el protocolo |
+| Marcos Agustín García Mombello | Otra arquitectura (EfficientNet-B0) | Si DenseNet121 era la mejor opción para estos datos |
+| Martin Mousist | Modelo B con 3 semillas | Cuánto cambia el resultado entre entrenamientos |
+
+Las tres parten del tag `base-final`. Cómo se organizan los forks, los datos compartidos y las reglas para que los resultados sean comparables está en [mejoras para el final](docs/MEJORAS_FINAL.md).
 
 ---
 
@@ -469,7 +361,7 @@ Ver [notebooks](notebooks/README.md).
 - [ ] Validación externa con otro dataset, por ejemplo [CheXpert](https://stanfordmlgroup.github.io/competitions/chexpert/), que el preparador ya sabe leer.
 - [ ] Probar resoluciones mayores que 224×224, donde los derrames chicos no se pierdan.
 - [ ] Medir F1 y especificidad por sexo y por edad en el test oficial, como ya se hizo por estudios previos, con las predicciones guardadas y sin volver a evaluar el modelo.
-- [ ] API REST con FastAPI e interfaz con Streamlit sobre `rx-predecir`.
+- [ ] API REST con FastAPI sobre `rx-predecir`.
 
 ---
 

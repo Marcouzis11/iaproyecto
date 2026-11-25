@@ -13,13 +13,13 @@
 |---|---|
 | `data/raw/` | NIH descargado, sin modificar. Fuera de git. |
 | `data/processed/` | Una carpeta por preparación: arrays `X`/`y`, CSV por conjunto, exclusiones y reportes. Fuera de git. |
-| `src/rx_torax/data/` | Lectura de metadatos (NIH, CheXpert, CSV genérico), auditoría y split por paciente. |
+| `src/rx_torax/data/` | Lectura de metadatos (NIH, CheXpert, CSV genérico), auditoría, split por paciente y `rx-verificar-datos`. |
 | `src/rx_torax/preprocessing/` | Lectura de imágenes y transformación a 224×224. La usan la preparación y la predicción. |
 | `src/rx_torax/training/` | DenseNet121, aumento de datos y entrenamiento. Nunca abre test. |
 | `src/rx_torax/evaluation/` | Métricas, bootstrap por paciente, evaluación única en test y comparación pareada. |
-| `src/rx_torax/inference/` | `rx-predecir`: carga `modelo.pt` y predice sobre archivos de imagen. |
-| `configs/` | JSON de preparación (`nih*.json`, `demo.json`) y de entrenamiento (`modelo_*.json`). |
-| `models/` | Un directorio por modelo. En git están el modelo final (B) completo y los reportes livianos de todos los modelos y comparaciones (`report.json`, `historial.csv`); los pesos de A, C y el control se regeneran. |
+| `src/rx_torax/inference/` | `rx-predecir` y `rx-probar`: cargan `modelo.pt` y predicen sobre archivos de imagen. `rx-descargar-pesos` baja los pesos publicados. |
+| `configs/` | JSON de preparación (`nih*.json`, `demo.json`) y de entrenamiento (`modelo_*.json`), y el SHA-256 de cada archivo de los datos preparados de B (`nih_effusion_pa_modelo_b_v1.sha256`). |
+| `models/` | Un directorio por modelo. En git están los pesos del modelo final (B), las predicciones de cada evaluación (`predicciones_*.csv`: imagen, paciente, etiqueta y puntaje) y los reportes de todos los modelos y comparaciones (`report.json`, `historial.csv`). Los pesos de A, control y C están en el release `pesos-v1` de GitHub. Las figuras no se versionan. |
 | `notebooks/` | Análisis exploratorio de NIH (guardado con resultados), preparación en celdas y sus pruebas. |
 | `tests/` | Pruebas automáticas con datos sintéticos (`unittest`). |
 | `scripts/` | `flujo_completo.sh` (demo o NIH de punta a punta) y `preparar.ps1` (Windows). |
@@ -36,6 +36,7 @@ Cada capa depende solo de las anteriores: la preparación no sabe nada del model
 | `feature/preprocesamiento` | Auditoría, split por paciente, selección 40/60 y preparación de NIH. |
 | `feature/modelado` | Entrenamiento, evaluación, predicción, modelos A, B y C, y documentación de la entrega. Parte de `feature/preprocesamiento`. |
 | `chore/entrega-mvp-final` | Integración continua, verificación de la instalación en Windows y material de la presentación del MVP. |
+| `mejora/*` | Una por cada mejora del final, en el fork de cada integrante. Parten del tag `base-final` ([mejoras para el final](MEJORAS_FINAL.md)). |
 
 Cada etapa se desarrolla en su rama y se integra en `main` con un pull request. `feature/modelado` salió de `feature/preprocesamiento` y las dos entraron juntas en el PR #1; la documentación posterior entró por ramas `docs/*` (PR #2 y #3). Los PR se integraron sin revisión formal en GitHub.
 
@@ -53,7 +54,7 @@ La instalación solo se había verificado en macOS; ahora se prueba en Ubuntu y 
 
 ## Integración continua
 
-`.github/workflows/tests.yml` corre en cada push y pull request, en Ubuntu (Python 3.11) y Windows (Python 3.13): instala el proyecto con las versiones fijadas, ejecuta las pruebas de `tests/` y prueba `rx-predecir` con las radiografías de ejemplo. Un pull request a `main` se integra con la ejecución en verde.
+`.github/workflows/tests.yml` corre en cada push y pull request, en Ubuntu (Python 3.11) y Windows (Python 3.13): instala el proyecto con las versiones fijadas, baja los pesos publicados, ejecuta las pruebas de `tests/`, recalcula los resultados con `rx-recalcular` y prueba `rx-predecir` con los cuatro modelos sobre las radiografías de ejemplo. Un pull request a `main` se integra con la ejecución en verde.
 
 ## Experimentos
 

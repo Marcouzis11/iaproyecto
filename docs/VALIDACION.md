@@ -2,15 +2,18 @@
 
 ## Pruebas automáticas
 
-`python -m unittest discover -s tests` corre las pruebas sin necesitar el dataset. Todas usan datos sintéticos, salvo `tests/test_examples.py`, que usa el modelo final y las radiografías de ejemplo versionadas:
+`python -m unittest discover -s tests` corre las pruebas sin necesitar el dataset. Todas usan datos sintéticos, salvo `tests/test_examples.py` y `tests/test_app.py`, que usan el modelo final y las radiografías de ejemplo versionadas, y `tests/test_recompute.py`, que usa las predicciones versionadas de los cuatro modelos:
 
 | Archivo | Qué comprueba |
 |---|---|
 | `tests/test_preparation.py` | Flujo de punta a punta y repetible con la misma semilla; exclusión de duplicados y etiquetas inválidas; ningún paciente en dos conjuntos; estadísticas calculadas solo con train; lectura de 16 bits y RGBA; filtro de vistas; selección 40/60 y repetición de positivas; conservación del test oficial de NIH. |
 | `tests/test_training.py` | Métricas contra cálculos a mano; umbral óptimo igual a una búsqueda exhaustiva; baseline siempre positivo; entrenamiento reproducible que nunca abre test; salidas que no se pisan. |
-| `tests/test_evaluation.py` | Bootstrap que remuestrea pacientes enteros; test evaluado con el umbral de validación y una sola vez; comparación pareada. |
+| `tests/test_evaluation.py` | Bootstrap que remuestrea pacientes enteros; test evaluado con el umbral de validación y una sola vez; comparación pareada, que en validación acepta modelos con otros arrays de las mismas imágenes (por ejemplo, otra resolución) si los dos ya se evaluaron, y rechaza conjuntos con otras imágenes o pacientes. |
 | `tests/test_inference.py` | La predicción sobre archivos da los mismos puntajes que los arrays preparados; salida en texto, JSON y CSV; errores claros con archivos inválidos o un modelo inexistente. |
 | `tests/test_examples.py` | El modelo B versionado da, sobre las cuatro radiografías de ejemplo, el puntaje documentado hasta el tercer decimal y el umbral 0,414; las cuatro cubren las celdas de la matriz de confusión. |
+| `tests/test_recompute.py` | `rx-recalcular` reproduce desde las predicciones versionadas las 7 evaluaciones y las 3 comparaciones, sin diferencias con sus `report.json`; las cifras del README (F1 0,744 con IC 0,726 a 0,761, AUC 0,869, matriz de confusión de B, F1 de A, control y C, 26 falsos positivos menos de C); cada CSV publica imagen, paciente, etiqueta y puntaje con 40% de positivas; ningún paciente está en validación y en test; un `report.json` alterado se detecta. Detecta las dos mutaciones que sobrevivían en la revisión del MVP: el recall de `binary_metrics` y el tamaño de la remuestra del bootstrap. |
+| `tests/test_checksums.py` | `rx-verificar-datos` acepta una carpeta idéntica y señala los archivos que faltan o cambiaron; la lista de los datos de B incluye los 14 archivos de la preparación. `rx-descargar-pesos` verifica el SHA-256, no deja nada si lo bajado no coincide, no pisa un archivo distinto y, si los pesos de A, control y C están bajados, son los publicados. No usa la red: la descarga se prueba con una carpeta local. |
+| `tests/test_app.py` | La página local (`rx-probar`) responde, da los mismos puntajes que `rx-predecir` sobre las radiografías de ejemplo, devuelve la imagen de entrada y el mapa de calor en 224×224, y contesta con un error claro ante un archivo que no es imagen. |
 
 `notebooks/02_pruebas_pipeline.ipynb` repite las pruebas de preparación sobre el código del notebook.
 

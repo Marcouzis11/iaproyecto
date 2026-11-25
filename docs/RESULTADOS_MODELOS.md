@@ -27,6 +27,8 @@ PYTHONPATH=src .venv/bin/python -m rx_torax.evaluation.compare --modelos models/
 PYTHONPATH=src .venv/bin/python -m rx_torax.evaluation.evaluate --modelo models/modelo_b_densenet121_v1 --conjunto test
 ```
 
+Sin NIH, `rx-recalcular` rehace todas las tablas de este documento desde las predicciones versionadas (`models/*/evaluacion_*/predicciones_*.csv`).
+
 ## Comparación en validación
 1.813 imágenes de 1.181 pacientes, 40% positivas.
 

@@ -2,7 +2,9 @@
 
 Compara dos modelos sobre el mismo conjunto, con bootstrap pareado por paciente.
 En validación sirve para elegir el modelo. En test (--conjunto test) solo lee las predicciones
-que ya guardó rx-evaluar: no vuelve a predecir ni elige nada.
+que ya guardó rx-evaluar: no vuelve a predecir ni elige nada. En validación también usa las guardadas
+si los dos modelos ya se evaluaron ahí; así se comparan modelos que leen otros arrays de las mismas
+imágenes, por ejemplo con otra resolución.
 """
 
 import argparse
@@ -24,10 +26,24 @@ from rx_torax.training.train import load_split, pick_device, versions
 SPLIT_NAMES = {'val': 'validación', 'test': 'test'}
 
 
+def image_name(path):
+    return path.replace('\\', '/').rsplit('/', 1)[-1]
+
+
 def same_split(first, second, split):
-    return first.resolve() == second.resolve() or all(
-        filecmp.cmp(first / name, second / name, shallow=False)
-        for name in (f'X_{split}.npy', f'y_{split}.npy', f'{split}.csv'))
+    """Mismas imágenes, pacientes y etiquetas, en el mismo orden. Los arrays pueden ser distintos."""
+    if first.resolve() == second.resolve():
+        return True
+    if not filecmp.cmp(first / f'y_{split}.npy', second / f'y_{split}.npy', shallow=False):
+        return False
+    key = lambda data: [(image_name(r['image_path']), r['patient_id'], r['target'])
+                        for r in read_rows(data / f'{split}.csv')]
+    return key(first) == key(second)
+
+
+def same_arrays(first, second, split):
+    return first.resolve() == second.resolve() or filecmp.cmp(first / f'X_{split}.npy', second / f'X_{split}.npy',
+                                                               shallow=False)
 
 
 def saved_scores(model_dir, split, labels):
@@ -41,6 +57,20 @@ def saved_scores(model_dir, split, labels):
         raise ValueError(f'{folder}: las predicciones no corresponden a {split}')
     report = json.loads((folder / 'report.json').read_text(encoding='utf-8'))
     return np.array([float(r['score']) for r in rows]), report['threshold']
+
+
+def paired_differences(labels, patients, first, second):
+    """Segundo menos primero, con IC 95% por bootstrap pareado por paciente. first y second son (puntajes, umbral).
+    Lo usan rx-comparar y rx-recalcular."""
+    (s1, t1), (s2, t2) = first, second
+
+    def paired(chosen):
+        a, b = summary(labels[chosen], s1[chosen], t1), summary(labels[chosen], s2[chosen], t2)
+        return {f'{key}_diferencia': b[key] - a[key] for key in a}
+
+    samples = bootstrap(labels, patients, paired, BOOTSTRAP['rounds'], BOOTSTRAP['seed'])
+    better = {key: float(np.mean([s[key] > 0 for s in samples])) for key in samples[0]}
+    return paired(np.arange(len(labels))), intervals(samples), better, len(samples)
 
 
 def read_history(model_dir):
@@ -91,23 +121,22 @@ def compare(model_dirs, output, names=None, device='auto', split='val'):
                          'la comparación no sería pareada')
     images, labels, indices = load_split(datas[0], split)
     rows = load_rows(datas[0], split, labels)
-    if split == 'test':
+    saved = all((path / f'evaluacion_{split}' / f'predicciones_{split}.csv').is_file() for path in model_dirs)
+    if split == 'test' or saved:
         device = None
         scored = {name: saved_scores(path, split, labels) for name, path in zip(names, model_dirs)}
     else:
+        if not same_arrays(*datas, split):
+            raise ValueError(f'Los modelos leen otros arrays de {SPLIT_NAMES[split]} (por ejemplo, otra resolución): '
+                             f'evaluar {split} con rx-evaluar en los dos y volver a comparar')
         device = pick_device(device)
         scored = {}
         for name, path in zip(names, model_dirs):
             artifact, model = load_model(path, device)
             scored[name] = (score(artifact, model, images, indices, device), artifact['threshold'])
     (first, (s1, t1)), (second, (s2, t2)) = scored.items()
-
-    def paired(chosen):
-        a, b = summary(labels[chosen], s1[chosen], t1), summary(labels[chosen], s2[chosen], t2)
-        return {f'{key}_diferencia': b[key] - a[key] for key in a}
-
     patients = np.array([r['patient_id'] for r in rows])
-    samples = bootstrap(labels, patients, paired, BOOTSTRAP['rounds'], BOOTSTRAP['seed'])
+    differences, ranges, better, valid_rounds = paired_differences(labels, patients, (s1, t1), (s2, t2))
     point = {first: summary(labels, s1, t1), second: summary(labels, s2, t2)}
     right1, right2 = (s1 >= t1) == (labels == 1), (s2 >= t2) == (labels == 1)
     report = {'created_at': datetime.now(timezone.utc).isoformat(), 'split': split, 'device': str(device),
@@ -115,10 +144,10 @@ def compare(model_dirs, output, names=None, device='auto', split='val'):
               'images': len(labels), 'patients': int(len(set(patients))), 'positives': int(labels.sum()),
               'metrics': {name: point[name] | binary_metrics(labels, *scored[name]) for name in names},
               'difference': f'{second} − {first}',
-              'differences': paired(np.arange(len(labels))),
-              'intervals_95': intervals(samples),
-              'probability_second_better': {key: float(np.mean([s[key] > 0 for s in samples])) for key in samples[0]},
-              'bootstrap': BOOTSTRAP | {'valid_rounds': len(samples)},
+              'differences': differences,
+              'intervals_95': ranges,
+              'probability_second_better': better,
+              'bootstrap': BOOTSTRAP | {'valid_rounds': valid_rounds},
               'disagreements': int(((s1 >= t1) != (s2 >= t2)).sum()),
               'only_first_right': int((right1 & ~right2).sum()), 'only_second_right': int((~right1 & right2).sum()),
               # Los reportes anteriores a repeat_positives usaban una muestra por imagen.

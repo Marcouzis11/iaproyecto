@@ -114,6 +114,8 @@ Análisis descriptivo, hecho después de evaluar. No cambia ningún modelo.
 4. **El test nuevo ya se usó.** Cualquier modelo nuevo necesitaría otro conjunto de prueba independiente.
 
 ## Reproducir
+Sin NIH, `rx-recalcular` rehace las tablas de validación y del test nuevo desde las predicciones versionadas de control y C. Con NIH:
+
 ```bash
 PYTHONPATH=src .venv/bin/python -m rx_torax.prepare --config configs/nih_v2_control.json
 PYTHONPATH=src .venv/bin/python -m rx_torax.prepare --config configs/nih_v2_c.json
