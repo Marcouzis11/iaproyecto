@@ -86,6 +86,14 @@ def summary(labels, scores, threshold):
     return {'auc': roc_auc(labels, scores), **{k: metrics[k] for k in ('f1', 'recall', 'specificity', 'precision')}}
 
 
+def metrics_with_intervals(labels, scores, patients, threshold):
+    """Métricas en el umbral e IC 95% por paciente. Lo usan rx-evaluar y rx-recalcular."""
+    samples = bootstrap(labels, patients, lambda chosen: summary(labels[chosen], scores[chosen], threshold),
+                        BOOTSTRAP['rounds'], BOOTSTRAP['seed'])
+    metrics = {'auc': roc_auc(labels, scores), **binary_metrics(labels, scores, threshold)}
+    return metrics, intervals(samples), len(samples)
+
+
 def group_metrics(labels, scores, threshold, mask):
     y, predicted = labels[mask], scores[mask] >= threshold
     positives, negatives = int(y.sum()), int(len(y) - y.sum())
@@ -213,9 +221,7 @@ def evaluate(model_dir, split='val', data=None, device='auto'):
     seconds = time.perf_counter() - started
     threshold = artifact['threshold']
     patients = np.array([r['patient_id'] for r in rows])
-    samples = bootstrap(labels, patients, lambda chosen: summary(labels[chosen], scores[chosen], threshold),
-                        BOOTSTRAP['rounds'], BOOTSTRAP['seed'])
-    metrics = {'auc': roc_auc(labels, scores), **binary_metrics(labels, scores, threshold)}
+    metrics, ranges, valid_rounds = metrics_with_intervals(labels, scores, patients, threshold)
     stage = output.with_name(output.name + '.parcial')
     if stage.exists():
         shutil.rmtree(stage)
@@ -233,8 +239,8 @@ def evaluate(model_dir, split='val', data=None, device='auto'):
               'split': split, 'device': str(device), 'versions': versions(), 'target': artifact['target'],
               'images': len(labels), 'patients': int(len(set(patients))), 'positives': int(labels.sum()),
               'threshold': threshold, 'threshold_source': 'validación, guardado en modelo.pt',
-              'metrics': metrics, 'intervals_95': intervals(samples),
-              'bootstrap': BOOTSTRAP | {'valid_rounds': len(samples)},
+              'metrics': metrics, 'intervals_95': ranges,
+              'bootstrap': BOOTSTRAP | {'valid_rounds': valid_rounds},
               'metrics_threshold_0_5': binary_metrics(labels, scores, 0.5),
               'baselines': trivial_baselines(labels),
               'at_prevalence': [at_prevalence(metrics['recall'], metrics['specificity'], p) for p in PREVALENCES],

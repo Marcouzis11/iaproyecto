@@ -2,7 +2,7 @@
 
 Cuatro radiografías PA del **test oficial** de NIH ChestX-ray14, para probar `rx-predecir` sin descargar el dataset. Ninguna se usó para entrenar el modelo ni para elegir su umbral.
 
-Se eligió una al azar de cada celda de la matriz de confusión del modelo B en test (`random.Random(42)` sobre `predicciones_test.csv`), así se ven aciertos y errores. No representan la exactitud del modelo: en test acertó el 74,3%.
+Se eligió una al azar de cada celda de la matriz de confusión del modelo B en test (`random.Random(42)` sobre [`predicciones_test.csv`](../../models/modelo_b_densenet121_v1/evaluacion_test/predicciones_test.csv), que tiene el puntaje, la etiqueta y el paciente de cada imagen del test), así se ven aciertos y errores. No representan la exactitud del modelo: en test acertó el 74,3%.
 
 | Imagen | Etiquetas de NIH | ¿Tiene Effusion? | Puntaje del modelo B | Decisión (umbral 0,414) | Resultado |
 |---|---|---|---|---|---|

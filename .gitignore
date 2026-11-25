@@ -23,13 +23,12 @@ venv/
 !/models/**/.gitkeep
 # Excepción: el modelo final (B) se versiona para poder predecir sin entrenar.
 !/models/modelo_b_densenet121_v1/modelo.pt
-!/models/modelo_b_densenet121_v1/report.json
-!/models/modelo_b_densenet121_v1/historial.csv
-!/models/modelo_b_densenet121_v1/evaluacion_test/report.json
 # Reportes livianos de todos los modelos y comparaciones (trazabilidad de experimentos).
 !/models/*/report.json
 !/models/*/historial.csv
 !/models/*/evaluacion_*/report.json
+# Puntaje, etiqueta y paciente de cada imagen evaluada: rx-recalcular rehace las métricas sin NIH.
+!/models/*/evaluacion_*/predicciones_*.csv
 
 # Material de la cátedra: queda local, no es parte del proyecto.
 /Slides/

@@ -1,6 +1,7 @@
 # Integración continua: en cada push y pull request instala el proyecto con las versiones fijadas,
-# corre las pruebas automáticas y prueba el MVP (rx-predecir) con las radiografías de ejemplo.
-# No necesita el dataset: las pruebas usan datos sintéticos y el modelo final está versionado.
+# corre las pruebas automáticas, recalcula los resultados publicados y prueba el MVP (rx-predecir)
+# con las radiografías de ejemplo. No necesita el dataset: las pruebas usan datos sintéticos, y las
+# predicciones y el modelo final están versionados.
 name: Pruebas
 
 on:
@@ -45,6 +46,9 @@ jobs:
 
       - name: Pruebas automáticas
         run: python -m unittest discover -s tests -v
+
+      - name: Resultados · rx-recalcular desde las predicciones versionadas
+        run: rx-recalcular
 
       - name: MVP · rx-predecir sobre las radiografías de ejemplo
         run: |

@@ -43,6 +43,20 @@ def saved_scores(model_dir, split, labels):
     return np.array([float(r['score']) for r in rows]), report['threshold']
 
 
+def paired_differences(labels, patients, first, second):
+    """Segundo menos primero, con IC 95% por bootstrap pareado por paciente. first y second son (puntajes, umbral).
+    Lo usan rx-comparar y rx-recalcular."""
+    (s1, t1), (s2, t2) = first, second
+
+    def paired(chosen):
+        a, b = summary(labels[chosen], s1[chosen], t1), summary(labels[chosen], s2[chosen], t2)
+        return {f'{key}_diferencia': b[key] - a[key] for key in a}
+
+    samples = bootstrap(labels, patients, paired, BOOTSTRAP['rounds'], BOOTSTRAP['seed'])
+    better = {key: float(np.mean([s[key] > 0 for s in samples])) for key in samples[0]}
+    return paired(np.arange(len(labels))), intervals(samples), better, len(samples)
+
+
 def read_history(model_dir):
     with (model_dir / 'historial.csv').open(newline='', encoding='utf-8') as stream:
         return [{key: float(value) for key, value in row.items()} for row in csv.DictReader(stream)]
@@ -101,13 +115,8 @@ def compare(model_dirs, output, names=None, device='auto', split='val'):
             artifact, model = load_model(path, device)
             scored[name] = (score(artifact, model, images, indices, device), artifact['threshold'])
     (first, (s1, t1)), (second, (s2, t2)) = scored.items()
-
-    def paired(chosen):
-        a, b = summary(labels[chosen], s1[chosen], t1), summary(labels[chosen], s2[chosen], t2)
-        return {f'{key}_diferencia': b[key] - a[key] for key in a}
-
     patients = np.array([r['patient_id'] for r in rows])
-    samples = bootstrap(labels, patients, paired, BOOTSTRAP['rounds'], BOOTSTRAP['seed'])
+    differences, ranges, better, valid_rounds = paired_differences(labels, patients, (s1, t1), (s2, t2))
     point = {first: summary(labels, s1, t1), second: summary(labels, s2, t2)}
     right1, right2 = (s1 >= t1) == (labels == 1), (s2 >= t2) == (labels == 1)
     report = {'created_at': datetime.now(timezone.utc).isoformat(), 'split': split, 'device': str(device),
@@ -115,10 +124,10 @@ def compare(model_dirs, output, names=None, device='auto', split='val'):
               'images': len(labels), 'patients': int(len(set(patients))), 'positives': int(labels.sum()),
               'metrics': {name: point[name] | binary_metrics(labels, *scored[name]) for name in names},
               'difference': f'{second} − {first}',
-              'differences': paired(np.arange(len(labels))),
-              'intervals_95': intervals(samples),
-              'probability_second_better': {key: float(np.mean([s[key] > 0 for s in samples])) for key in samples[0]},
-              'bootstrap': BOOTSTRAP | {'valid_rounds': len(samples)},
+              'differences': differences,
+              'intervals_95': ranges,
+              'probability_second_better': better,
+              'bootstrap': BOOTSTRAP | {'valid_rounds': valid_rounds},
               'disagreements': int(((s1 >= t1) != (s2 >= t2)).sum()),
               'only_first_right': int((right1 & ~right2).sum()), 'only_second_right': int((~right1 & right2).sum()),
               # Los reportes anteriores a repeat_positives usaban una muestra por imagen.
