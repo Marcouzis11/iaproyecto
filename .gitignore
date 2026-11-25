@@ -21,7 +21,8 @@ venv/
 /models/**
 !/models/**/
 !/models/**/.gitkeep
-# Excepción: el modelo final (B) se versiona para poder predecir sin entrenar.
+# Excepción: los pesos del modelo final (B), para predecir apenas se clona. Los de A, control y C
+# están en el release pesos-v1 de GitHub y se bajan con rx-descargar-pesos.
 !/models/modelo_b_densenet121_v1/modelo.pt
 # Reportes livianos de todos los modelos y comparaciones (trazabilidad de experimentos).
 !/models/*/report.json

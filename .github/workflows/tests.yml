@@ -1,7 +1,7 @@
 # Integración continua: en cada push y pull request instala el proyecto con las versiones fijadas,
-# corre las pruebas automáticas, recalcula los resultados publicados y prueba el MVP (rx-predecir)
-# con las radiografías de ejemplo. No necesita el dataset: las pruebas usan datos sintéticos, y las
-# predicciones y el modelo final están versionados.
+# baja los pesos publicados de A, control y C, corre las pruebas automáticas, recalcula los resultados
+# publicados y prueba el MVP (rx-predecir) con las radiografías de ejemplo. No necesita el dataset:
+# las pruebas usan datos sintéticos, y las predicciones y el modelo final están versionados.
 name: Pruebas
 
 on:
@@ -44,6 +44,9 @@ jobs:
       - name: Instalar el proyecto (versiones fijadas)
         run: python -m pip install -e .
 
+      - name: Pesos publicados · rx-descargar-pesos (release pesos-v1)
+        run: rx-descargar-pesos
+
       - name: Pruebas automáticas
         run: python -m unittest discover -s tests -v
 
@@ -63,6 +66,12 @@ jobs:
           assert clases == esperado, f'Las clases cambiaron: {clases}'
           print('Las 4 radiografías de ejemplo dan la clase documentada en el README.')
           EOF
+
+      - name: Pesos publicados · rx-predecir con A, control y C
+        run: |
+          for modelo in modelo_a_densenet121_v1 modelo_control_v2_densenet121 modelo_c_v2_densenet121; do
+            rx-predecir --modelo models/$modelo examples/radiografias/*.png
+          done
 
       - name: MVP · error claro con un archivo que no es imagen
         run: |
