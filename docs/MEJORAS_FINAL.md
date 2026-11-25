@@ -61,7 +61,7 @@ La misma receta que B cambiando solo la red, para que la diferencia se deba a la
   rx-comparar --modelos models/modelo_b_densenet121_v1 models/<nuevo> --nombres B <Nuevo> --conjunto test --salida models/comparacion_test_b_<nuevo>
   ```
 
-- Se versionan la configuración, `report.json`, `historial.csv`, los `report.json` y `predicciones_*.csv` de cada evaluación y los `report.json` de las comparaciones; `.gitignore` ya los deja pasar. Los pesos no van a git: se guardan en Drive y al integrar se publican en un release, como los de A, control y C.
+- Se versionan la configuración, `report.json`, `historial.csv`, los `report.json` y `predicciones_*.csv` de cada evaluación y los `report.json` de las comparaciones; `.gitignore` ya los deja pasar. Los pesos del modelo final de cada mejora se versionan como los de A, B, control y C, agregando su ruta a las excepciones de `.gitignore`; los de variantes descartadas quedan en Drive.
 - Antes del pull request, `rx-recalcular` tiene que decir que todos los resultados coinciden. La integración continua lo vuelve a correr.
 - Cada mejora se documenta en su propio archivo (`docs/MEJORA_F1_080.md`, `docs/MEJORA_EFFICIENTNET_B0.md`, `docs/MEJORA_SEMILLAS_B.md`). El README y los documentos compartidos no se tocan en los forks, para no generar conflictos: los tres resultados entran al README en un último pull request.
 

@@ -35,7 +35,6 @@ rx-comparar = "rx_torax.evaluation.compare:main"
 rx-recalcular = "rx_torax.evaluation.recompute:main"
 rx-predecir = "rx_torax.inference.predict:main"
 rx-probar = "rx_torax.inference.app:main"
-rx-descargar-pesos = "rx_torax.inference.weights:main"
 rx-verificar-datos = "rx_torax.data.checksums:main"
 
 [tool.setuptools.packages.find]

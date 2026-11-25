@@ -217,7 +217,7 @@ El análisis completo está en [metodología](docs/METODOLOGIA.md#análisis-crí
 ├── requirements.txt        # Entorno exacto del entrenamiento (macOS arm64, Python 3.11)
 ├── configs/                # JSON de preparación y entrenamiento, y SHA-256 de los datos preparados
 ├── data/                   # Fuera de git: NIH descargado (raw/) y preparaciones (processed/)
-├── models/                 # Predicciones y reportes de A, B, control y C; pesos del modelo final (B)
+├── models/                 # Pesos, predicciones y reportes de A, B, control y C, y sus comparaciones
 ├── src/rx_torax/           # Código: data/, preprocessing/, training/, evaluation/ e inference/
 ├── notebooks/              # EDA de NIH, preparación y pruebas
 ├── tests/                  # Pruebas automáticas (unittest)
@@ -227,7 +227,7 @@ El análisis completo está en [metodología](docs/METODOLOGIA.md#análisis-crí
 └── .github/workflows/      # Integración continua en cada push
 ```
 
-En git están los pesos del modelo final (B), y las predicciones y los reportes de los cuatro modelos, así que los resultados se recalculan sin NIH. Los pesos de A, control y C (28 MB cada uno) están en el release [`pesos-v1`](https://github.com/Marcouzis11/iaproyecto/releases/tag/pesos-v1), para no hacer pesado cada clon, y se bajan con `rx-descargar-pesos`. Los datos preparados quedan fuera de git porque pesan varios GB. Las ramas y la organización del trabajo están en [organización](docs/ORGANIZACION.md).
+Los cuatro modelos están en git con sus pesos (28 MB cada uno), sus predicciones por imagen y sus reportes, así que cualquiera se usa apenas se clona y los resultados se recalculan sin NIH. Los datos preparados quedan fuera de git porque pesan varios GB. Las ramas y la organización del trabajo están en [organización](docs/ORGANIZACION.md).
 
 ---
 
@@ -262,9 +262,9 @@ Instalación verificada desde cero en macOS (Apple M4, Python 3.11) y en Windows
 
 **Variables de entorno:** no hace falta ninguna; las rutas y parámetros están en `configs/`. [`.env.example`](.env.example) lista las opcionales de Python y PyTorch, sin claves. El dispositivo se elige solo (CUDA, MPS o CPU) y se fuerza con `--dispositivo cpu`.
 
-**Comprobar la instalación:** `python -m unittest discover -s tests` corre 65 pruebas en alrededor de un minuto, sin el dataset: usan datos sintéticos, el modelo final con las radiografías de ejemplo y las predicciones versionadas ([detalle](docs/VALIDACION.md)).
+**Comprobar la instalación:** `python -m unittest discover -s tests` corre 61 pruebas en alrededor de un minuto, sin el dataset: usan datos sintéticos, el modelo final con las radiografías de ejemplo y las predicciones versionadas ([detalle](docs/VALIDACION.md)).
 
-**Integración continua:** en cada push y pull request, GitHub Actions instala el proyecto con las versiones fijadas, baja los pesos publicados, corre estas pruebas, recalcula con `rx-recalcular` todos los resultados y ejecuta `rx-predecir` con los cuatro modelos sobre las radiografías de ejemplo. Corre en Ubuntu con Python 3.11 y en Windows con Python 3.13 ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)).
+**Integración continua:** en cada push y pull request, GitHub Actions instala el proyecto con las versiones fijadas, corre estas pruebas, recalcula con `rx-recalcular` todos los resultados y ejecuta `rx-predecir` con los cuatro modelos sobre las radiografías de ejemplo. Corre en Ubuntu con Python 3.11 y en Windows con Python 3.13 ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)).
 
 ---
 
@@ -307,11 +307,11 @@ Cada evaluación guarda una fila por imagen en `models/<modelo>/evaluacion_<conj
 ### 4. Usar los modelos A, control y C
 
 ```bash
-rx-descargar-pesos
 rx-predecir --modelo models/modelo_c_v2_densenet121 examples/radiografias/*.png
+rx-probar --modelo models/modelo_a_densenet121_v1
 ```
 
-Baja los pesos del release `pesos-v1`, verifica su SHA-256 y los deja en `models/<modelo>/modelo.pt`. Con eso, `rx-predecir --modelo` y `rx-probar --modelo` funcionan con cualquiera de los cuatro modelos.
+Los pesos de los cuatro modelos vienen en el repositorio, en `models/<modelo>/modelo.pt`, con el umbral que cada uno eligió en validación. `--modelo` los cambia en `rx-predecir` y en `rx-probar`; sin esa opción se usa el modelo final (B).
 
 ### 5. Entrenar y evaluar
 

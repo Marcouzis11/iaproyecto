@@ -1,21 +1,26 @@
-"""Pruebas de rx-verificar-datos y rx-descargar-pesos: los dos comparan SHA-256 antes de confiar en un archivo.
+"""Pruebas de rx-verificar-datos y de los pesos versionados: los dos se comparan por SHA-256."""
 
-No usan la red: la descarga se prueba con una URL file:// a una carpeta temporal.
-"""
-
+import json
 import tempfile
 import unittest
 from pathlib import Path
-from unittest import mock
+
+import torch
 
 from rx_torax.data.checksums import read_manifest, sha256, verify, write_manifest
-from rx_torax.inference import weights
 
 ROOT = Path(__file__).resolve().parents[1]
 MODEL_B_DATA = ROOT / 'configs' / 'nih_effusion_pa_modelo_b_v1.sha256'
 PREPARED_FILES = {f'{kind}_{split}.npy' for kind in 'Xy' for split in ('train', 'val', 'test')} | \
                  {f'{split}.csv' for split in ('train', 'val', 'test')} | \
                  {'config.json', 'exclusiones.csv', 'labels.json', 'preprocessing.json', 'report.json'}
+# SHA-256 de cada modelo.pt versionado. Si un archivo cambia, deja de corresponder a sus reportes y predicciones.
+WEIGHTS = {
+    'modelo_a_densenet121_v1': '38a0f99199e53d4a72803259205ec98aa28a50b00d9e99a8f11b8cf29ab3039f',
+    'modelo_b_densenet121_v1': 'e25a0b4a28cc9409c68e375d83f5104799db71cbd4bcaf9b6f4810b4a606b5e4',
+    'modelo_control_v2_densenet121': '1c23c6aa85ee3c3f5e49fafa43a6211baf8b7c39794b4a896116f7345fdd3bf4',
+    'modelo_c_v2_densenet121': '2aab1a55ade2692c72c9c1c50922765e2936b2e61981a9ed34e131dce6e8f01e',
+}
 
 
 class VerifyDataTests(unittest.TestCase):
@@ -48,55 +53,19 @@ class VerifyDataTests(unittest.TestCase):
         self.assertEqual(set(read_manifest(MODEL_B_DATA)), PREPARED_FILES)
 
 
-class DownloadWeightsTests(unittest.TestCase):
-    def setUp(self):
-        self.temp = tempfile.TemporaryDirectory()
-        root = Path(self.temp.name)
-        self.release, self.models = root / 'release', root / 'models'
-        self.release.mkdir()
-        (self.release / 'modelo_x.pt').write_bytes(b'pesos del modelo x')
-        self.source = self.release.as_uri()
-        patcher = mock.patch.dict(weights.WEIGHTS, {'modelo_x': sha256(self.release / 'modelo_x.pt')}, clear=True)
-        patcher.start()
-        self.addCleanup(patcher.stop)
-
-    def tearDown(self):
-        self.temp.cleanup()
-
-    def test_download_verifies_and_does_not_repeat(self):
-        target, downloaded = weights.download('modelo_x', self.models, self.source)
-        self.assertTrue(downloaded)
-        self.assertEqual(target.read_bytes(), b'pesos del modelo x')
-        self.assertEqual(weights.download('modelo_x', self.models, self.source), (target, False))
-
-    def test_corrupted_download_leaves_nothing(self):
-        (self.release / 'modelo_x.pt').write_bytes(b'otra cosa')
-        with self.assertRaises(ValueError):
-            weights.download('modelo_x', self.models, self.source)
-        self.assertEqual(list((self.models / 'modelo_x').iterdir()), [])
-
-    def test_a_different_local_file_is_not_replaced(self):
-        target = self.models / 'modelo_x' / 'modelo.pt'
-        target.parent.mkdir(parents=True)
-        target.write_bytes(b'entrenado por otra persona')
-        with self.assertRaises(ValueError):
-            weights.download('modelo_x', self.models, self.source)
-        self.assertEqual(target.read_bytes(), b'entrenado por otra persona')
-
-    def test_unknown_model_is_rejected(self):
-        with self.assertRaises(ValueError):
-            weights.download('modelo_b_densenet121_v1', self.models, self.source)
-
-
-class PublishedWeightsTests(unittest.TestCase):
-    def test_local_weights_are_the_published_ones(self):
-        present = {name: ROOT / 'models' / name / 'modelo.pt' for name in weights.WEIGHTS}
-        present = {name: path for name, path in present.items() if path.is_file()}
-        if not present:
-            self.skipTest('Pesos de A, control y C no bajados (rx-descargar-pesos)')
-        for name, path in present.items():
+class VersionedWeightsTests(unittest.TestCase):
+    def test_each_weight_file_is_the_one_behind_its_reports(self):
+        for name, digest in WEIGHTS.items():
             with self.subTest(modelo=name):
-                self.assertEqual(sha256(path), weights.WEIGHTS[name])
+                folder = ROOT / 'models' / name
+                self.assertEqual(sha256(folder / 'modelo.pt'), digest)
+                artifact = torch.load(folder / 'modelo.pt', map_location='cpu', weights_only=True)
+                training = json.loads((folder / 'report.json').read_text(encoding='utf-8'))
+                validation = json.loads((folder / 'evaluacion_val' / 'report.json').read_text(encoding='utf-8'))
+                self.assertEqual(artifact['epoch'], training['best_epoch'])
+                self.assertEqual(artifact['threshold'], validation['threshold'])
+                self.assertEqual((artifact['architecture'], artifact['image_size'], artifact['target']),
+                                 ('densenet121', 224, 'Effusion'))
 
 
 if __name__ == '__main__':
